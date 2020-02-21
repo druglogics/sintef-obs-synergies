@@ -1,0 +1,297 @@
+---
+title: "SINTEF-dataset Observed Synergies"
+author: "[John Zobolas](https://github.com/bblodfon)"
+date: "Last updated: `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: style.css
+    theme: united
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 2
+    number_sections: false
+    code_folding: hide
+    code_download: true
+bibliography: references.bib
+link-citations: true
+---
+
+# Intro {-}
+
+<div class="blue-box">
+The purpose of this analysis is to compare as many as possible **tools and methods** that we have in our disposal in order to classify the synergies observed in the dataset that was published by [@Flobak2019]. 
+Note that throughout this analysis the term *SINTEF dataset* will refer to the first screen dataset from that paper.
+</div>
+<br>
+By **methods** we refer to mathematical models like **Bliss and HSA (Highest Single Agent)** used for the synergy classification as well as to the data processing methodology for identification and extraction of the synergies from the dataset.
+
+Currently, this analysis is mostly based on the use of the [rbbt](http://mikisvaz.github.io/rbbt/) tool with its specified workflows and tasks for finding the observed synergies of the SINTEF dataset using various parameters as input.
+
+# Summary {-}
+
+<div class="green-box">
+Something in here!
+</div>
+
+# Input {-}
+
+Loading libraries and helping functions:
+```{r Load libraries, message = FALSE}
+library(dplyr)
+library(usefun)
+
+source(file = "fun.R")
+```
+
+# Rbbt: Synergies {-}
+
+## Aim 
+
+The `rbbt` bioinformatics toolkit has several workflows and the most interesting for our investigation are the [`SINTEF`](https://github.com/Rbbt-Workflows/SINTEF) and [`CombinationIndex`](https://github.com/Rbbt-Workflows/combination_index) - the later published as a standalone in [@Flobak2017].
+
+<div class="blus-box">
+So, using the `rbbt` tool and the `SINTEF` workflow, we are going to define the synergies in the SINTEF dataset (8 cell lines) and check **which computation methods (and input parameters) come closer** to our [gold-curation standard](#synergy-methods).
+</div>
+
+## Data Preprocessing {-#zenodo-data}
+
+The `SINTEF` workflow provides several *tasks* to calculate the observed synergies for the cell lines of the SINTEF data paper and all these tasks use internally the `CombinationIndex` tasks `bliss` and `hsa`.
+The last two tasks take a lot of time to calculate - around $1$ hour *per cell line* - but they are independent in the sense that the results do not change (they depend only on the SINTEF dataset). 
+
+So the data from these two tasks needs to be pre-calculated before we proceed further with the analysis. 
+We provide either **the data pre-calculated** (and a way to extract it for use in the analysis) or **a way to calculate it yourself (DIY)**:
+
+1. [Download](https://doi.org/10.5281/zenodo.3666230) the two datasets from zenodo
+
+  Move the two archived files to `~/.rbbt/var/jobs/SINTEF` (where the job files are stored) and run:
+```
+tar xzvf sintef.combination.index.bliss.tar.gz
+tar xzvf sintef.combination.index.hsa.tar.gz
+```
+  Thus, two directories named `bliss` and `hsa`, will be created (with the respective results inside).
+
+2. Compute the `bliss` and `hsa` task results from the SINTEF dataset (DIY way)
+
+  Given an `rbbt.SINTEF.image` (ask the author for it), and a `SINTEF` workflow at least at commit `947307b`, you can use the [run_cimbinator.sh](run_cimbinator.sh) script to produce the data results.
+
+## Synergy Methods {-}
+
+In December 2019, we renamed some of the tasks in the `SINTEF` workflow in order to better understand what these methods actually do and to also add some new ones. 
+We now have **the following methods (rbbt tasks) for calculating synergy scores in the SINTEF dataset** (the `SINTEF` workflow has to be at least on commit `81f64a`):
+
+1. **Gold-Standard (GS)**^[The *Gold standard* is actually taken from [an online file](https://docs.google.com/spreadsheets/d/1Uyi-jpC2xNd4hWvtMILssXEFk8yHmk26xKhTVnZ1H7o/edit?usp=sharing) that has the results from a manual/visual inspection of the SINTEF dataset (the dose-response curves) and it's a consensus of three curators: **Asmund Flobak, Barbara Niederdorfer and Evelina Folkesson**. The `synergy_classification_by_GS` task from the rbbt `SINTEF` workflow has to be at least on the `81f64a` commit to take the latest version of that file]
+    - Command: `rbbt workflow task SINTEF synergy_classification_by_GS -h`
+    - Example: `... --cell_line=A498 | grep -v SF`
+2. **Averaged scores for Bliss and HSA (AvgBliss, AvgHSA)**^[Computed from the `bliss` and `hsa` [CombinationIndex task results](#zenodo-data) and not taken directly from Barbara's file any more as it was done with the `observed_synergies_averaged` task (i.e. on the SINTEF workflow commit `d1a2e5` and before)]
+    - Command: `rbbt workflow task SINTEF synergy_classification_by_avg -h`
+    - Example: `... --ci_method=hsa --excess_threshold=-0.10 --cell_line=AGS | grep -v SF`
+3. **Consecutive excess method for Bliss and HSA (ConExcessBliss, ConExcessHSA)**^[Also uses the `bliss` and `hsa` [CombinationIndex task results](#zenodo-data)]
+    - Command: `rbbt workflow task SINTEF synergy_classification_by_consecutive_excesses -h`
+    - Example: `... --ci_method=hsa --consecutive_excess_count=2 --excess_threshold=-0.15 --cell_line=AGS`
+4. **Consecutive proportional excess method for Bliss and HSA (ConPropExcessBliss, ConPropExcessHSA)**^[Also uses the `bliss` and `hsa` [CombinationIndex task results](#zenodo-data)]
+    - Command: `rbbt workflow task SINTEF synergy_classification_by_consecutive_proportional_excesses -h`
+    - Example: `... --ci_method=bliss --consecutive_excess_count=2 --excess_proportional_threshold=0.2 --cell_line=AGS`
+
+### Details
+
+<div class="orange-box">
+- The **GS** method is the result of curation - visual inspection of 3 dose response curves for each drug combination case from the SINTEF dataset: 2 of the single-drugs and 1 for the combination.
+- The **AvgBliss** and **AvgHSA** tasks compute the average scores for Bliss and HSA methods for each  (using CImbinator, one score per drug combination) and a synergy is called when this average value is lower than the given `excess_threshold`.
+- The **ConExcessBliss** and **ConExcessHSA** tasks call as a synergy a drug combination where there is at least `consecutive_excess_count` amount of consecutive points of the non-interaction curve (Bliss or HSA) that are lower than the corresponding points of the combined response curve by a value/distance of `excess_threshold`.
+- The **ConPropExcessBliss** and **ConPropExcessHSA** tasks call as a synergy a drug combination where there is at least `consecutive_excess_count` amount of consecutive points of the non-interaction curve (Bliss or HSA) that are lower than the corresponding points of the combined response curve by a threshold value that is determined from the *proportion* (`excess_proportional_threshold`) of the excess relative to the magnitude of the combined response.
+</div>
+
+```{r Checking the online synergy gold standard file, include=FALSE, eval=FALSE}
+df = read.table(file = "online_synergy_gs.csv", header = TRUE, sep = ",")
+df %>% 
+  filter(Cellline == "UACC62", Drug.A != "SF", Drug.B != "SF", Gold.Standard == "Synergy") %>% 
+  select(Drug.A, Drug.B, Gold.Standard)
+```
+
+## Gold-Standard Synergies {-}
+
+So, for each respective cell line we get the *gold-curated* standard (GS) synergies:
+```{r GS Synergies compute}
+gs.list = readRDS(file = "gs_list.rds")
+```
+
+And these are:
+```{r GS Synergies per cell line, results='asis'}
+cell.lines = c("A498", "AGS", "Colo205", "DU145", "MDA-MB-468", "SF295", "SW620", "UACC62")
+
+print.gs.synergies = function() {
+  pretty_print_string("")
+  for (cell.line in cell.lines) {
+    pretty_print_bold_string(string = cell.line, with.gt = FALSE)
+    print_empty_line(html.output = TRUE)
+    pretty_print_vector_values(gs.list[[cell.line]], with.gt = FALSE, vector.values.str = "synergies")
+    print_empty_line(html.output = TRUE)
+    print_empty_line(html.output = TRUE)
+  }
+}
+
+print.gs.synergies()
+```
+
+## Scoring Synergy Methods {-}
+
+As we saw above, for every cell line we have a set of GS-synergies. 
+Also, every `SINTEF` task [defined](#synergy-methods) - referred for simplicity here as a **method** - given different parameters, will produce a different set of synergies where some of them will be in the respective GS set and some maybe not.
+
+We want to define a *matching score* that will tell us **how close the calculated synergy set of a method is to the respective GS one**.
+Some definitions first:
+
+- For a particular cell line, we define the set of gold-standard synergies as $gset$ and the set of calculated synergies from a method with a given parameterization as $mset$. 
+- The number of synergies in each set will be defined as $l_{gset}\ge0$ and $l_{mset}\ge0$ respectively.
+- The number of common synergies between the two sets are equal to the number of $hits$ (the number of synergies that the method got *right*) and the number of synergies which the calculated method got *wrong* are the $misses$ (so they are part of the $l_{mset}$ but not part of $l_{gset}$).
+
+So, it must be pretty obvious that our *hits-and-misses* score should try to **maximize the $hits$ and minimize the $misses$**, which mathematically can be expressed by this equation: $max(hits-misses)$.
+Observe that the extreme values for this difference are: 
+$$max_{hm}=max(hits-misses)=l_{gset}-0=l_{gset}$$ 
+if the sets compared are exactly the same ($mset=gset$) and 
+$$min_{hm}=min(hits-misses)=0-max(misses)=-l_{mset}$$ if 
+$mset \cap gset=\emptyset$ respectively.
+
+So, given the 2 sets $gset$ and $mset$, with some $hits$ and $misses$ as defined above, we produce the normalized $score_{hm}\in[0,1]$ of how well the method's produced set matches the gold-standard set as:
+
+$$score_{hm}=\frac{(hits-misses)-min_{hm}}{max_{hm}-min_{hm}}=\frac{hits-misses+l_{mset}}{l_{gset}+l_{mset}}$$
+
+```{r Example gsets and msets}
+# for the examples
+gset = c("a","b","c")
+mset1 = c("a","b","c")
+mset2 = c("b","c","d")
+mset3 = c("c","d","e")
+mset4 = c("b","c","e","f","g","j","o")
+mset5 = c("c","d","e","f","g","j","o")
+mset6 = c("d","e")
+```
+
+Consider the following examples to understand how the formula works (capital letters represent different drug combinations):
+
+- $gset=\{A,B,C\}$, $mset1=\{A,B,C\}$, $score_{hm}=`r get.score(gset, mset1)`$
+- $gset=\{A,B,C\}$, $mset2=\{B,C,D\}$, $score_{hm}=`r get.score(gset, mset2)`$
+- $gset=\{A,B,C\}$, $mset3=\{C,D,E\}$, $score_{hm}=`r get.score(gset, mset3)`$
+- $gset=\{A,B,C\}$, $mset4=\{B,C,E,F,G,J,O\}$, $score_{hm}=`r get.score(gset, mset4)`$
+- $gset=\{A,B,C\}$, $mset5=\{C,D,E,F,G,J,O\}$, $score_{hm}=`r get.score(gset, mset5)`$
+- $gset=\{A,B,C\}$, $mset6=\{D,E\}$, $score_{hm}=`r get.score(gset, mset6)`$
+
+<div class="orange-box">
+For the advanced reader, note that the *hits-and-misses* $score_{hm}$, is actually the **F1-score** (!), since considering that $hits=TP$, $misses=FP$, $l_{mset}=TP+FP$ and $l_{gset}=P=TP+FN$, we have that:
+$$score_{hm}=\frac{hits-misses+l_{mset}}{l_{gset}+l_{mset}}=\frac{TP-FP+TP+FP}{TP+FN+TP+FP}=\frac{2\times TP}{2\times TP+FN+FP}=F_1$$
+</div>
+
+## Analysis {-}
+
+To perform a complete search on the [methods](#synergy-methods) parameter space and derive a score for each method (with a specific parameter combination in each case), run [this script](run_rbbt_sintef_synergy_tasks.R).
+We have already run this for efficiency and now simply load the result object to continue with the analysis:
+```{r Load results}
+
+```
+
+
+
+
+
+
+
+
+# Bliss-all-combinations method {-}
+
+Barbara's **Bliss-all-combinations method** (I arbitrarily chose the name) was the method that she and Asmund used in [@Flobak2019] (data from the first screen) to find and visualize the synergies across all 8 cell lines. 
+The method is described in the text and Asmund wrote an *R* script that calculates the **average Bliss excesses** and **significance scores** (*p_values_Bliss.R* in the supplementary material - generates the [bliss_significance.tsv](bliss_significance.tsv) file). 
+Combinations with **average Bliss excess values** $<−0.08$ and *p-value* $<0.05$ were classified as synergies (results were put into the [bliss_synergies.tsv](bliss_synergies.tsv) file).
+
+2 things to do:
+
+- Take the result immediately from the **bliss_synergies.tsv** file
+- Play with the **bliss_significance.tsv**
+
+# Rbbt: Compare HSA Results (TO DELETE) {-}
+
+Consider this to be a *side-quest* investigation!
+
+## Aim {-}
+
+Compare two results:
+
+1. **HSA-based synergies that Vasundra used in INSIDE** (INfluential NoDE AnalySIs, **4 cell lines**) - included in Barbara's modeling paper
+2. **Barbara's HSA results** in rbbt's `observed_synergies_averaged` task (which takes as input a file that she had given to Miguel a while ago and which she said to me once that she has everything there *averaged*).
+
+## Compare Results {-}
+
+<div class="orange-box">
+Note that we did some task renaming in rbbt's `SINTEF` workflow tasks so the R code for this section to run needs a `SINTEF` workflow that is no further than the commit **d1a2e5**! (the task `observed_synergies_averaged` that used Barbara's file **is no longer used**). 
+Thus, the following code is shown but not executed in this current version of the document.
+</div>
+
+Getting the results in appropriate format:
+```{r INSIDE Observed Synergies, eval=FALSE, include=TRUE}
+# File with the synergies as used in the Influential Node Analysis (that Vasundra gave me!)
+inside.obs.synergies.file = paste0(getwd(), "/20190205_Synergy_HSA.txt")
+df = read.table(file = inside.obs.synergies.file, header = TRUE, sep = "\t")
+
+# Turn FALSE,TRUE to 0,1
+cols = sapply(df, is.logical)
+df[,cols] = lapply(df[,cols], as.numeric)
+
+# AGS
+ags.obs = df %>% filter(AGS == 1) %>% select(Combination)
+ags.obs.synergies = as.character(ags.obs$Combination)
+ags.obs.synergies = sort(ags.obs.synergies)
+
+ags.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="AGS", method="HSA", observed_threshold=-0.11, log="0", type = "array")
+ags.obs.synergies.2 = ags.obs.2[!grepl(pattern = "SF", x = ags.obs.2)]
+ags.obs.synergies.2 = str_replace_all(string = ags.obs.synergies.2, pattern = "~", replacement = "-")
+ags.obs.synergies.2 = sort(ags.obs.synergies.2)
+
+# Colo205
+colo205.obs = df %>% filter(COLO205 == 1) %>% select(Combination)
+colo205.obs.synergies = as.character(colo205.obs$Combination)
+colo205.obs.synergies = sort(colo205.obs.synergies)
+
+colo205.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="Colo205", method="HSA", observed_threshold=-0.11, log="0", type = "array")
+colo205.obs.synergies.2 = colo205.obs.2[!grepl(pattern = "SF", x = colo205.obs.2)]
+colo205.obs.synergies.2 = str_replace_all(string = colo205.obs.synergies.2, pattern = "~", replacement = "-")
+colo205.obs.synergies.2 = sort(colo205.obs.synergies.2)
+
+# DU145
+du145.obs = df %>% filter(DU145 == 1) %>% select(Combination)
+du145.obs.synergies = as.character(du145.obs$Combination)
+du145.obs.synergies = sort(du145.obs.synergies)
+
+du145.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="DU145", method="HSA", observed_threshold=-0.11, log="0", type = "array")
+du145.obs.synergies.2 = du145.obs.2[!grepl(pattern = "SF", x = du145.obs.2)]
+du145.obs.synergies.2 = str_replace_all(string = du145.obs.synergies.2, pattern = "~", replacement = "-")
+du145.obs.synergies.2 = sort(du145.obs.synergies.2)
+
+# SW620
+sw620.obs = df %>% filter(SW620 == 1) %>% select(Combination)
+sw620.obs.synergies = as.character(sw620.obs$Combination)
+sw620.obs.synergies = sort(sw620.obs.synergies)
+
+sw620.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="SW620", method="HSA", observed_threshold=-0.11, log="0", type = "array")
+sw620.obs.synergies.2 = sw620.obs.2[!grepl(pattern = "SF", x = sw620.obs.2)]
+sw620.obs.synergies.2 = str_replace_all(string = sw620.obs.synergies.2, pattern = "~", replacement = "-")
+sw620.obs.synergies.2 = sort(sw620.obs.synergies)
+```
+
+Comparing them:
+```{r Compare vectors of synergies, results='asis', eval=FALSE, include=TRUE}
+# Everything here executed with not errors (vectors were the same)
+stopifnot(all(ags.obs.synergies == ags.obs.synergies.2))
+stopifnot(all(colo205.obs.synergies == colo205.obs.synergies.2))
+stopifnot(all(du145.obs.synergies == du145.obs.synergies.2))
+stopifnot(all(sw620.obs.synergies == sw620.obs.synergies.2))
+```
+
+## Summary {-}
+
+<div class="blue-box">
+The observed synergies for the 4 cell lines (`AGS`, `Colo205`, `DU145` and `SW620`) used by Vasundra for the influential node analysis **are the same ones** as they were calculated using HSA (average method) in a file Barbara had given Miguel and he exposed to `rbbt` as a task called **observed_synergies_averaged** under the `SINTEF` workflow (and using $observed\_threshold=-0.11$).
+</div>
+</br>
+
+# References {-}
