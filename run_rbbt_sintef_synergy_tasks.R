@@ -58,16 +58,16 @@ for (cell.line in cell.lines) {
 }
 
 # ConPropExcessBliss/HSA method
-proportional_excess_thresholds = seq(from = 0, to = 0.8, by = 0.05) # ranging from loose to more strict!
+excess_proportional_thresholds = seq(from = 0, to = 0.8, by = 0.025) # ranging from loose to more strict!
 task.name = "ConPropExcess"
 
 for (cell.line in cell.lines) {
   gset = gs.list[[cell.line]]
   for (ci_method in ci_methods) {
     for (consecutive_excess_count in consecutive_excess_counts) {
-      for (proportional_excess_threshold in proportional_excess_thresholds) {
-        mset = run.sintef.task(task = task.name, cell.line = cell.line, ci_method = ci_method, consecutive_excess_count = consecutive_excess_count, proportional_excess_threshold = proportional_excess_threshold)
-        data.list[[index]] = tibble(task = task.name, cell_line = cell.line, ci_method = ci_method, proportional_excess_threshold = proportional_excess_threshold, consecutive_excess_count = consecutive_excess_count, f1.score = get.score(gset, mset))
+      for (excess_proportional_threshold in excess_proportional_thresholds) {
+        mset = run.sintef.task(task = task.name, cell.line = cell.line, ci_method = ci_method, consecutive_excess_count = consecutive_excess_count, excess_proportional_threshold = excess_proportional_threshold)
+        data.list[[index]] = tibble(task = task.name, cell_line = cell.line, ci_method = ci_method, excess_proportional_threshold = excess_proportional_threshold, consecutive_excess_count = consecutive_excess_count, f1.score = get.score(gset, mset))
         index = index + 1
       }
     }
