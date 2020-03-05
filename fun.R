@@ -12,8 +12,8 @@ rbbt.ruby.exec = function(code) {
 
 #' Run a synergy SINTEF task
 #'
-#' Use this function to call from the rbbt SINTEF workflow, tasks that produce
-#' syenrgies as a result.
+#' Use this function to call rbbt SINTEF workflow tasks that produce
+#' synergies as a result given task-specific parameters.
 #'
 #' @param task 1 of 4 options: 'GS', 'Avg', 'ConExcess' or 'ConPropExcess'
 #' @param cell.line name of the cell line
