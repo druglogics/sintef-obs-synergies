@@ -40,6 +40,7 @@ Something in here!
 Loading libraries and helping functions:
 ```{r Load libraries, message = FALSE}
 library(dplyr)
+library(tibble)
 library(usefun)
 
 source(file = "fun.R")
@@ -104,9 +105,10 @@ We now have **the following methods (rbbt tasks) for calculating synergy scores 
 </div>
 
 ```{r Checking the online synergy gold standard file, include=FALSE, eval=FALSE}
-df = read.table(file = "online_synergy_gs.csv", header = TRUE, sep = ",")
+df = as_tibble(read.table(file = "online_synergy_gs.tsv", header = TRUE, sep = "\t"))
+
 df %>% 
-  filter(Cellline == "UACC62", Drug.A != "SF", Drug.B != "SF", Gold.Standard == "Synergy") %>% 
+  filter(Cellline == "Colo205", Drug.A != "SF", Drug.B != "SF", Gold.Standard == "Synergy") %>% 
   select(Drug.A, Drug.B, Gold.Standard)
 ```
 
