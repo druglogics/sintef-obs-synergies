@@ -1,0 +1,10 @@
+base
+dplyr
+readr
+tidyr
+ggplot2
+magrittr
+ggpubr
+RColorBrewer
+usefun
+stringr
