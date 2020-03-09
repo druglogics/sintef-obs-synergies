@@ -32,7 +32,16 @@ Currently, this analysis is mostly based on the use of the [rbbt](http://mikisva
 # Summary {-}
 
 <div class="green-box">
-Something in here!
+- Bliss-related methods produce [higher F1-Scores overall](#bvsa) (matching closer the Gold-Standard synergies per cell line) than the HSA-related ones.
+This difference in favor of Bliss:
+  - Is **independent of the cell line** (see [Bliss vs HSA (Seperate Tasks)]).
+  - It **depends on the task** that is [used](#bvhpt)**: `ConPropExcess` results (F1-Scores) are higher for Bliss than for HSA, compared to the other 2 tasks where there is no statistically significant difference.
+- [Bliss correlates with HSA](#bliss-vs-hsa-correlation):
+  - The **more sophisticated the task** (complexity increases in tasks as: `Avg` < `ConExcess` < `ConPropExcess`), the **higher the correlation between Bliss and HSA**.
+  - In the `Avg` and `ConExcess tasks`, HSA has a larger percentage of F1-Scores (∼5% and ∼9% more than Bliss respectively).
+  - In the `ConPropExcess` task, Bliss has a larger percentage of F1-Scores (∼13% more compared to HSA).
+  - The regression lines are below the `y=x` line: no matter the cell line or task, **there are always some Bliss-related methods that produce higher F1-Scores than the corresponding HSA ones**.
+
 </div>
 
 # Input {-}
@@ -200,20 +209,21 @@ res.data = as_tibble(readRDS(file = "res_data.rds"))
 
 So, the results consist of the [F1-scores](#scoring-synergy-methods) for every possible combination of:
 
-- $3$ [SINTEF tasks](#synergy-methods) (Avg, ConExcess, ConPropExcess)
+- $3$ [SINTEF tasks](#synergy-methods) (**Avg, ConExcess, ConPropExcess**)
 - $2$ *ci_methods* (**Bliss and HSA**) 
 
-and parameters (if applicable to each task): 
+and parameters (applicable to specific tasks): 
 
 - $5$ *consecutive_excess_count*'s (1-5)
 - $51$ *excess_threshold*'s (from $0$ to $-0.5$ with a step of $-0.01$) and
 - $33$ *excess_proportional_threshold*'s (from $0$ to $0.8$ with a $0.025$ step).
 
-### Bliss vs HSA
+### Bliss vs HSA (General Comparison)
 
-Let's first compare the two mathematical models that were used in the calculation of synergies.
-We will do that across all possible tasks, cell lines and parameters (to get a general idea), as well per cell line and method tested.
+Let's compare **from the raw data** (so not matching them exactly parameter-to-parameter) the two mathematical models that were used in the calculation of synergies.
+First, we will do that across all possible tasks, cell lines and parameters:
 
+<div id="bvsa"></div>
 ```{r Bliss vs HSA all, cache=TRUE, fig.align="center"}
 ggboxplot(data = res.data, x = "ci_method", y = "f1.score", 
   title = "Bliss vs HSA across all cell lines, tasks and parameters",
@@ -227,8 +237,9 @@ Seems that there is a **small difference in favor of the bliss-related tasks**
 </div>
 <br>
 
-Let's check if the same trend can be seen when we split the data per cell line:
+Let's check if the same trend can be seen when we split the raw data per cell line:
 
+<div id="bvhpcl"></div>
 ```{r Bliss vs HSA per cell line, cache=TRUE, warning=FALSE, fig.align="center"}
 ggboxplot(data = res.data, x = "cell_line", y = "f1.score", fill = "ci_method",
   title = "Bliss vs HSA per cell line across all tasks and parameters",
@@ -244,7 +255,7 @@ ggboxplot(data = res.data, x = "cell_line", y = "f1.score", fill = "ci_method",
 <br>
 
 Grouping the data per task we have:
-
+<div id="bvhpt"></div>
 ```{r Bliss vs HSA per task, cache=TRUE, warning=FALSE, fig.align="center"}
 ggboxplot(data = res.data, x = "task", y = "f1.score", fill = "ci_method",
   title = "Bliss vs HSA per SINTEF task, across all cell lines and parameters",
@@ -252,23 +263,17 @@ ggboxplot(data = res.data, x = "task", y = "f1.score", fill = "ci_method",
   stat_compare_means(aes(group = ci_method), label = "p.signif")
 ```
 
-Keeping only the `F1-Scores` that are larger than $0.5$ we have:
-```{r Bliss vs HSA per task - high F1-Scores, cache=TRUE, warning=FALSE, fig.align="center"}
-ggboxplot(data = res.data %>% filter(f1.score > 0.5), x = "task", y = "f1.score", fill = "ci_method",
-  title = "Bliss vs HSA per SINTEF task, across all cell lines and parameters",
-  xlab = "Tasks", ylab = "F1-Score", palette = c("#E41A1C", "#4DAF4A")) + 
-  stat_compare_means(aes(group = ci_method), label = "p.signif")
-```
-
 <div class="blue-box">
-- The tasks classified **from best performing to worst** are: **Avg > ConExcessTasks > ConPropExcess**
-- There are no parameter combinations in the `ConPropExcess` task for any cell line that produce synergies matching exactly the curated standard synergies in that cell line (`F1-Score` equal to $1$)
-- There is seems to be **no strong statistical difference between Bliss and HSA in each task**
+- There are no parameter combinations in the `ConPropExcess` task for any cell line that produce synergies matching exactly the curated standard synergies in that cell line (`F1-Score` equal to $1$).
+- There is **no statistical difference between Bliss and HSA** in the `Avg` and `ConExcess` tasks.
+- **Bliss has a statistical significant difference from HSA** in the `ConPropExcess` task.
 </div>
 <br>
 
+### Bliss vs HSA (Seperate Tasks)
+
 We will now compare Bliss vs HSA synergy methods for each different task in separate graphs.
-This will allow us to observe **if in each task there is indeed this small Bliss advantage over HSA, or if it actually depends more on each cell line**:
+This will allow us to observe **if in each task there is a small Bliss advantage over HSA, or if it actually depends more on each cell line**:
 
 ```{r Bliss vs HSA per cell line (diff graph/task), cache=TRUE, fig.align="center", warning=FALSE} 
 ggboxplot(data = res.data %>% filter(task == "Avg"), x = "cell_line", y = "f1.score", 
@@ -289,13 +294,119 @@ ggboxplot(data = res.data %>% filter(task == "ConPropExcess"), x = "cell_line", 
 ```
 
 <div class="blue-box">
-- There is **no strong difference between Bliss vs HSA methods in the same SINTEF task**.
-- But no matter the task, there is most of the times a Bliss method that will outperform any HSA-based one, in any given cell line.
+- There is **no strong difference between Bliss vs HSA methods in the same SINTEF task across all cell lines**.
+So the choice of cell line seems to not play an important role.
+- But no matter the task, **there is most of the times a Bliss method that will outperform any HSA-based one, in any given cell line**.
 </div>
 <br>
 
+### Bliss vs HSA (Correlation)
+
+Now we tidy our raw data, in order to compare **homogenous data points** - i.e. coming from the same task, parameters and cell line, only different synergy method (Bliss vs HSA).
+
+First for the `Avg` task:
+```{r Bliss vs HSA correlation (Avg task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
+data.task.avg = res.data %>% 
+  filter(task == "Avg") %>% 
+  group_by(ci_method) %>% 
+  arrange(ci_method, excess_threshold, cell_line) %>%
+  transmute(cell_line, excess_threshold, f1.score) %>% 
+  group_split() %>% 
+  bind_cols()
+
+# count Bliss vs HSA F1-Scores
+task.avg.counts = data.task.avg %>% 
+  transmute(equal = (f1.score == f1.score1), less = (f1.score < f1.score1), larger = (f1.score > f1.score1)) %>% 
+  summarise(equal = sum(equal), less = sum(less), larger = sum(larger))
+
+ggscatter(data = data.task.avg, x = "f1.score", y = "f1.score1", color = "cell_line",
+  xlab = "Bliss F1-Scores", ylab = "HSA F1-Scores",
+  title = "'Avg' task (Kendall Correlation)",
+  add = "reg.line", add.params = list(color = "blue", fill = "lightgray"),
+  conf.int = TRUE, cor.coef = TRUE, 
+  cor.coeff.args = list(method = "kendall", label.x.npc = 0.7, label.y.npc = 0.1)) + 
+  geom_segment(x = 0, y = 0, xend = 1, yend = 1, size = 0.3, linetype = "dashed") +
+  annotate(geom = "text", label = "y = x", x = 0.93, y = 1) +
+  annotate(geom = "text", label = paste0("Bliss < HSA: ", signif(100*task.avg.counts$less/sum(task.avg.counts), digits = 2), "%"), x = 0.15, y = 1) +
+  annotate(geom = "text", label = paste0("Bliss = HSA: ", signif(100*task.avg.counts$equal/sum(task.avg.counts), digits = 2), "%"), x = 0.15, y = 0.9) +
+  annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.avg.counts$larger/sum(task.avg.counts), digits = 2), "%"), x = 0.15, y = 0.8)
+```
+
+Next for the `ConExcess` task:
+```{r Bliss vs HSA correlation (ConExcess task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
+data.task.con.excess = res.data %>% 
+  filter(task == "ConExcess") %>% 
+  group_by(ci_method) %>% 
+  arrange(ci_method, consecutive_excess_count, excess_threshold, cell_line) %>%
+  transmute(consecutive_excess_count, excess_threshold, cell_line, f1.score) %>% 
+  group_split() %>% 
+  bind_cols()
+
+# count Bliss vs HSA F1-Scores
+task.con.excess.counts = data.task.con.excess %>% 
+  transmute(equal = (f1.score == f1.score1), less = (f1.score < f1.score1), larger = (f1.score > f1.score1)) %>% 
+  summarise(equal = sum(equal), less = sum(less), larger = sum(larger))
+
+ggscatter(data = data.task.con.excess, x = "f1.score", y = "f1.score1", color = "cell_line",
+  xlab = "Bliss F1-Scores", ylab = "HSA F1-Scores",
+  title = "'ConExcess' task (Kendall Correlation)",
+  add = "reg.line", add.params = list(color = "blue", fill = "lightgray"),
+  conf.int = TRUE, cor.coef = TRUE, 
+  cor.coeff.args = list(method = "kendall", label.x.npc = 0.7, label.y.npc = 0.1)) + 
+  geom_segment(x = 0, y = 0, xend = 1, yend = 1, size = 0.3, linetype = "dashed") +
+  annotate(geom = "text", label = "y = x", x = 0.93, y = 1) + 
+  annotate(geom = "text", label = paste0("Bliss < HSA: ", signif(100*task.con.excess.counts$less/sum(task.con.excess.counts), digits = 2), "%"), x = 0.15, y = 1) +
+  annotate(geom = "text", label = paste0("Bliss = HSA: ", signif(100*task.con.excess.counts$equal/sum(task.con.excess.counts), digits = 2), "%"), x = 0.15, y = 0.9) +
+  annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.con.excess.counts$larger/sum(task.con.excess.counts), digits = 2), "%"), x = 0.15, y = 0.8)
+```
+
+Lastly, for the `ConPropExcess` task:
+```{r Bliss vs HSA correlation (ConPropExcess task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
+data.task.con.prop.excess = res.data %>% 
+  filter(task == "ConPropExcess") %>% 
+  group_by(ci_method) %>% 
+  arrange(ci_method, consecutive_excess_count, excess_proportional_threshold, cell_line) %>%
+  transmute(consecutive_excess_count, excess_proportional_threshold, cell_line, f1.score) %>% 
+  group_split() %>% 
+  bind_cols()
+
+# count Bliss vs HSA F1-Scores
+task.con.prop.excess.counts = data.task.con.prop.excess %>% 
+  transmute(equal = (f1.score == f1.score1), less = (f1.score < f1.score1), larger = (f1.score > f1.score1)) %>% 
+  summarise(equal = sum(equal), less = sum(less), larger = sum(larger))
+
+ggscatter(data = data.task.con.prop.excess, x = "f1.score", y = "f1.score1", color = "cell_line",
+  xlab = "Bliss F1-Scores", ylab = "HSA F1-Scores",
+  title = "'ConPropExcess' task (Kendall Correlation)",
+  add = "reg.line", add.params = list(color = "blue", fill = "lightgray"),
+  conf.int = TRUE, cor.coef = TRUE, 
+  cor.coeff.args = list(method = "kendall", label.x.npc = 0.7, label.y.npc = 0.1)) + 
+  geom_segment(x = 0, y = 0, xend = 0.8, yend = 0.8, size = 0.3, linetype = "dashed") +
+  annotate(geom = "text", label = "y = x", x = 0.73, y = 0.8) +
+  annotate(geom = "text", label = paste0("Bliss < HSA: ", signif(100*task.con.prop.excess.counts$less/sum(task.con.prop.excess.counts), digits = 2), "%"), x = 0.15, y = 0.8) +
+  annotate(geom = "text", label = paste0("Bliss = HSA: ", signif(100*task.con.prop.excess.counts$equal/sum(task.con.prop.excess.counts), digits = 2), "%"), x = 0.15, y = 0.7) +
+  annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.con.prop.excess.counts$larger/sum(task.con.prop.excess.counts), digits = 2), "%"), x = 0.15, y = 0.6)
+```
+
+<div class="blue-box">
+- Bliss results correlate with HSA ones more on `ConPropExcess` task, less on the `ConExcess` task and even less on the `Avg` task. 
+So the **more sophisticated** the method is, the **larger the correlation** between Bliss and HSA (more common F1-Scores).
+- **In more than half of the data points** collected across all cell lines and task parameters, **Bliss produces an equal F1-Score with the HSA-based methods**.
+- Where the results between Bliss and HSA differ: 
+  - In the `Avg` and `ConExcess` tasks, **HSA has a larger percentage of F1-Scores** ($\sim5\%$ and $\sim 9\%$ difference respectively).
+  - In the `ConPropExcess` task, **Bliss has a larger percentage of F1-Scores** ($\sim 13\%$ difference).
+- The above reflects the results of [this figure](#bvhpt) which shows Bliss having a statistical significant difference from HSA for the `ConPropExcess` task.
+  This also means that the value differences of the F1-Scores between HSA and Bliss are larger in magnitude in the `ConPropExcess` task compared to the other two tasks
+  (since the difference percentages somewhat negate each other across the 3 tasks but there is a difference in the [overall data in favor of Bliss](#bvsa)).
+- In all 3 graphs above, **the regression line is below the `y=x` line** which means that there are higher Bliss values produced by some methods (no matter the task or cell line): these **(outlier-sort-of) Bliss results outperform the HSA similar ones**.
+</div>
+
+### Find best task+parameters
+
 <div class="orange-box">
-Our job now is to find the task with the set of parameters that will give the best HSA or Bliss-based f1-score across all the cell lines tested.
+Our job now is to find the task with the set of parameters that will give the best HSA or Bliss-based F1-score across all the cell lines tested.
+
+So we will aggragate the results across the 8 cell lines by producing **the average F1-Score** for each specific synergy task, for both Bliss and HSA *ci_methods* and for every possible combination of the task parameters.
 </div>
 
 
