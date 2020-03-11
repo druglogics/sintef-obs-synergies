@@ -1,10 +1,13 @@
 base
+usefun
 dplyr
-readr
 tidyr
+readr
+tibble
 ggplot2
+plotly
+DT
 magrittr
 ggpubr
 RColorBrewer
-usefun
 stringr
