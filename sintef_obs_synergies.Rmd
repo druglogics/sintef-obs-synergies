@@ -32,28 +32,33 @@ Currently, this analysis is mostly based on the use of the [rbbt](http://mikisva
 # Summary {-}
 
 <div class="green-box">
-- Bliss-related methods produce [higher F1-Scores overall](#bvsa) (matching closer the Gold-Standard synergies per cell line) than the HSA-related ones.
+- Raw data analysis shows that Bliss-related methods produce [higher F1-Scores overall](#bvsa) (matching closer the Gold-Standard synergies per cell line) than the HSA-related ones.
 This difference in favor of Bliss:
   - Is **independent of the cell line** (see [Bliss vs HSA (Seperate Tasks)]).
-  - It **depends on the task** that is [used](#bvhpt)**: `ConPropExcess` results (F1-Scores) are higher for Bliss than for HSA, compared to the other 2 tasks where there is no statistically significant difference.
-- [Bliss correlates with HSA](#bliss-vs-hsa-correlation):
+  - It **depends on the task** that is [used](#bvhpt): `ConPropExcess` results (F1-Scores) are higher for Bliss than for HSA, compared to the other 2 tasks where there is no statistically significant difference.
+- [Bliss correlates with HSA](#bliss-vs-hsa-correlation) when comparing same tasks (with same parameters + same cell line):
   - The **more sophisticated the task** (complexity increases in tasks as: `Avg` < `ConExcess` < `ConPropExcess`), the **higher the correlation between Bliss and HSA**.
   - In the `Avg` and `ConExcess tasks`, HSA has a larger percentage of F1-Scores (∼5% and ∼9% more than Bliss respectively).
   - In the `ConPropExcess` task, Bliss has a larger percentage of F1-Scores (∼13% more compared to HSA).
   - The regression lines are below the `y=x` line: no matter the cell line or task, **there are always some Bliss-related methods that produce higher F1-Scores than the corresponding HSA ones**.
-
+  - The two synergy methods [correlate also in the parameter space](#parameter-space-plots))
+- The best average [F1-Score](#highest-f1-scored-task) **across all 8 cell lines** was produced by the `ConExcess` [method](#synergy-methods) and the **HSA synergy method**.
+  - For the `AGS` cell line we have a **perfect synergy assement**: the [best task results match exactly](#parameter-space-plots) the same synergies as the curated Gold-Standard for `AGS`!
 </div>
 
 # Input {-}
 
 Loading libraries and helping functions:
 ```{r Load libraries, message = FALSE}
+library(usefun)
 library(dplyr)
-library(readr)
 library(tidyr)
+library(readr)
+library(tibble)
+library(plotly)
+library(DT)
 library(ggpubr)
 library(RColorBrewer)
-library(usefun)
 
 source(file = "fun.R")
 ```
@@ -228,7 +233,7 @@ First, we will do that across all possible tasks, cell lines and parameters:
 ggboxplot(data = res.data, x = "ci_method", y = "f1.score", 
   title = "Bliss vs HSA across all cell lines, tasks and parameters",
   xlab = "Synergy Method", ylab = "F1-Score", color = "ci_method",
-  add = "jitter", palette = c("#E41A1C", "#4DAF4A"), shape = "ci_method") + 
+  add = "jitter", palette = "Set1", shape = "ci_method") + 
   stat_compare_means(label.x = 1.35)
 ```
 
@@ -243,7 +248,7 @@ Let's check if the same trend can be seen when we split the raw data per cell li
 ```{r Bliss vs HSA per cell line, cache=TRUE, warning=FALSE, fig.align="center"}
 ggboxplot(data = res.data, x = "cell_line", y = "f1.score", fill = "ci_method",
   title = "Bliss vs HSA per cell line across all tasks and parameters",
-  xlab = "Cell lines", ylab = "F1-Score", palette = c("#E41A1C", "#4DAF4A")) + 
+  xlab = "Cell lines", ylab = "F1-Score", palette = "Set1") + 
   stat_compare_means(aes(group = ci_method), label = "p.signif") +
   theme(axis.text.x = element_text(size = 11))
 ```
@@ -259,7 +264,7 @@ Grouping the data per task we have:
 ```{r Bliss vs HSA per task, cache=TRUE, warning=FALSE, fig.align="center"}
 ggboxplot(data = res.data, x = "task", y = "f1.score", fill = "ci_method",
   title = "Bliss vs HSA per SINTEF task, across all cell lines and parameters",
-  xlab = "Tasks", ylab = "F1-Score", palette = c("#E41A1C", "#4DAF4A")) + 
+  xlab = "Tasks", ylab = "F1-Score", palette = "Set1") + 
   stat_compare_means(aes(group = ci_method), label = "p.signif")
 ```
 
@@ -278,17 +283,17 @@ This will allow us to observe **if in each task there is a small Bliss advantage
 ```{r Bliss vs HSA per cell line (diff graph/task), cache=TRUE, fig.align="center", warning=FALSE} 
 ggboxplot(data = res.data %>% filter(task == "Avg"), x = "cell_line", y = "f1.score", 
   fill = "ci_method", title = "Bliss vs HSA per cell line (Task: Avg)",
-  xlab = "Cell lines", ylab = "F1-Score", palette = c("#E41A1C", "#4DAF4A")) + 
+  xlab = "Cell lines", ylab = "F1-Score", palette = "Set1") + 
   stat_compare_means(aes(group = ci_method), label = "p.signif") +
   theme(axis.text.x = element_text(size = 11))
 ggboxplot(data = res.data %>% filter(task == "ConExcess"), x = "cell_line", y = "f1.score", 
   fill = "ci_method", title = "Bliss vs HSA per cell line (Task: ConExcess)",
-  xlab = "Cell lines", ylab = "F1-Score", palette = c("#E41A1C", "#4DAF4A")) +
+  xlab = "Cell lines", ylab = "F1-Score", palette = "Set1") +
   stat_compare_means(aes(group = ci_method), label = "p.signif") +
   theme(axis.text.x = element_text(size = 11))
 ggboxplot(data = res.data %>% filter(task == "ConPropExcess"), x = "cell_line", y = "f1.score", 
   fill = "ci_method", title = "Bliss vs HSA per cell line (Task: ConPropExcess)",
-  xlab = "Cell lines", ylab = "F1-Score", palette = c("#E41A1C", "#4DAF4A")) + 
+  xlab = "Cell lines", ylab = "F1-Score", palette = "Set1") + 
   stat_compare_means(aes(group = ci_method), label = "p.signif") +
   theme(axis.text.x = element_text(size = 11))
 ```
@@ -401,15 +406,174 @@ So the **more sophisticated** the method is, the **larger the correlation** betw
 - In all 3 graphs above, **the regression line is below the `y=x` line** which means that there are higher Bliss values produced by some methods (no matter the task or cell line): these **(outlier-sort-of) Bliss results outperform the HSA similar ones**.
 </div>
 
-### Find best task+parameters
+### Highest F1-Scored Task
 
 <div class="orange-box">
-Our job now is to find the task with the set of parameters that will give the best HSA or Bliss-based F1-score across all the cell lines tested.
+Our job now is to find the task with the set of parameters that will give the **best (HSA or Bliss-based) F1-score across all the cell lines** tested - i.e. the task that best *fits* the curated GS across all cell lines.
 
-So we will aggragate the results across the 8 cell lines by producing **the average F1-Score** for each specific synergy task, for both Bliss and HSA *ci_methods* and for every possible combination of the task parameters.
+So we will aggragate the results across the 8 cell lines by producing **the average F1-Score** for each specific synergy task with all its combination of parameters (for both Bliss and HSA).
 </div>
+<br>
 
+We calculate the average F1-Scores per task and find the maximum ones across all cell lines:
+```{r Find fittest task}
+# Avg task
+avg.f1.task.avg = res.data %>% 
+  filter(task == "Avg") %>% 
+  group_by(ci_method, excess_threshold) %>% 
+  summarise(avg.f1.score = mean(f1.score)) %>%
+  ungroup() %>%
+  add_column(task = "Avg", .before = 1)
 
+data.list = list()
+data.list[[1]] = 
+  avg.f1.task.avg %>% 
+  group_by(ci_method) %>% 
+  filter(avg.f1.score == max(avg.f1.score)) %>%
+  ungroup()
+
+# ConExcess task
+avg.f1.task.con.excess = res.data %>% 
+  filter(task == "ConExcess") %>% 
+  group_by(ci_method, consecutive_excess_count, excess_threshold) %>% 
+  summarise(avg.f1.score = mean(f1.score)) %>%
+  ungroup() %>%
+  add_column(task = "ConExcess", .before = 1)
+
+data.list[[2]] = 
+  avg.f1.task.con.excess %>% 
+  group_by(ci_method) %>% 
+  filter(avg.f1.score == max(avg.f1.score)) %>%
+  ungroup()
+
+# ConPropExcess task
+avg.f1.task.con.prop.excess = res.data %>% 
+  filter(task == "ConPropExcess") %>% 
+  group_by(ci_method, consecutive_excess_count, excess_proportional_threshold) %>% 
+  summarise(avg.f1.score = mean(f1.score)) %>%
+  ungroup() %>%
+  add_column(task = "ConPropExcess", .before = 1)
+
+data.list[[3]] = 
+  avg.f1.task.con.prop.excess %>% 
+  group_by(ci_method) %>% 
+  filter(avg.f1.score == max(avg.f1.score)) %>%
+  ungroup()
+
+best.avg.f1.scores = bind_rows(data.list) %>% 
+  select(task, ci_method, avg.f1.score, excess_threshold, consecutive_excess_count, excess_proportional_threshold)
+max.avg.f1.score = max(best.avg.f1.scores$avg.f1.score)
+
+# color avg.f1.scores
+f1.breaks = quantile(best.avg.f1.scores %>% pull(avg.f1.score), probs = seq(.05, .95, .05))
+f1.colors = round(seq(255, 40, length.out = length(f1.breaks) + 1), 0) %>%
+  {paste0("rgb(255,", ., ",", ., ")")} # red
+
+options(persistent = TRUE)
+
+caption.title = "Highest average F1-Score Tasks with respective parameters"
+datatable(data = best.avg.f1.scores,
+  options = list(dom = "t", # just show the table
+  order = list(list(3, 'desc')),
+  columnDefs = list(list(className = 'dt-center', targets = 3:6))),
+  caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>%
+  formatStyle(columns = c("avg.f1.score"), backgroundColor = styleInterval(f1.breaks, f1.colors)) %>%
+  formatRound(3:6, digits = 3)
+```
+
+As we expected from the results of an [earlier graph](#bvhpt), the `ConPropExcess` task produces the lowest among the maximum average F1-Scores across all tasks tested (and it's Bliss F1-Score is larger than the respective HSA).
+
+**The best average F1-Score** across all 8 cell lines was produced by the `ConExcess` [method](#synergy-methods).
+The `rbbt` command line parameters to produce the synergies per given cell line using the best task are:
+
+```
+rbbt workflow task SINTEF synergy_classification_by_consecutive_excesses --consecutive_excess_count=2 --excess_threshold=-0.17 --ci_method=hsa --cell_line=<NAME> | grep -v SF
+```
+<br>
+
+The per-cell-line F1-Scores produced by the best task as found above are:
+```{r Best Task Individual Cell line F1-Scores}
+best.task.data = res.data %>%
+  filter(task == "ConExcess", consecutive_excess_count == 2, excess_threshold == -0.17, ci_method == "hsa") %>%
+  select(cell_line, f1.score)
+datatable(data = best.task.data, options = list(dom = "t"))
+```
+<div class="green-box">
+For the `AGS` cell line we have a **perfect synergy assement**: the best task results match exactly the same synergies as the curated Gold-Standard for `AGS`!
+</div>
+<br>
+
+### Parameter Space Plots
+
+We now visualize the **parameter space** for each task and per *ci_method* (Bliss vs HSA):
+
+```{r Parameter Space - Avg task}
+# title font style
+my.title.font = list(family = "Courier New, monospace", size = 18, color = "black")
+
+plot_ly(data = avg.f1.task.avg, x = ~excess_threshold, y = ~avg.f1.score, width = 800,
+  type = "scatter", mode = "lines+markers", color = ~ci_method, colors = "Set1") %>%
+  layout(title = list(text = "Avg Task - Mean F1-Score across 8 cell lines", font = my.title.font),
+    xaxis = list(title = "Excess Threshold", zeroline = FALSE),
+    yaxis = list(title = "Mean F1-Score")) %>%
+  config(displayModeBar = FALSE)
+```
+
+```{r Parameter Contour plots - ConExcess Task}
+# font style
+my.colorbar.font = list(family = "Courier New, monospace", size = 14, color = "black")
+
+fig1 = plot_ly(avg.f1.task.con.excess %>% filter(ci_method == "bliss"), x = ~consecutive_excess_count, 
+  y = ~excess_threshold, z = ~avg.f1.score, zmin = 0, zmax = max.avg.f1.score, width = 1000,
+  colorscale = "Jet", type = "contour", contours = list(showlabels = TRUE)) %>% 
+  colorbar(title = list(text = "Mean F1-Score \n(8 cell lines)", font = my.colorbar.font), 
+    tickmode = "linear", tick0 = 0, dtick = 0.1) %>%
+  layout(annotations = list(
+    list(x = 0.5, y = 1, xanchor = "center", yanchor = "bottom", align = "center", 
+      xref='paper', yref='paper', showarrow = FALSE, 
+      font = my.title.font, text = "ConExcess Task - Bliss")))
+
+fig2 = plot_ly(avg.f1.task.con.excess %>% filter(ci_method == "hsa"), x = ~consecutive_excess_count, 
+  y = ~excess_threshold, z = ~avg.f1.score, zmin = 0, zmax = max.avg.f1.score, width = 1000,
+  colorscale = "Jet", type = "contour", contours = list(showlabels = TRUE), 
+  showscale = FALSE) %>% layout(annotations = list(
+    list(x = 0.5, y = 1, xanchor = "center", yanchor = "bottom", align = "center", 
+      xref='paper', yref='paper', showarrow = FALSE, 
+      font = my.title.font, text = "ConExcess Task - HSA")))
+
+subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>% 
+  config(displayModeBar = FALSE)
+```
+
+```{r Parameter Contour plots - ConPropExcess Task}
+fig1 = plot_ly(avg.f1.task.con.prop.excess %>% filter(ci_method == "bliss"), x = ~consecutive_excess_count, 
+  y = ~excess_proportional_threshold, z = ~avg.f1.score, zmin = 0, zmax = max.avg.f1.score, width = 1000,
+  colorscale = "Jet", type = "contour", contours = list(showlabels = TRUE)) %>% 
+  colorbar(title = list(text = "Mean F1-Score \n(8 cell lines)", font = my.colorbar.font), 
+    tickmode = "linear", tick0 = 0, dtick = 0.1) %>%
+  layout(annotations = list(
+    list(x = 0.5, y = 1, xanchor = "center", yanchor = "bottom", align = "center", 
+      xref='paper', yref='paper', showarrow = FALSE, 
+      font = my.title.font, text = "ConPropExcess Task - Bliss")))
+
+fig2 = plot_ly(avg.f1.task.con.prop.excess %>% filter(ci_method == "hsa"), x = ~consecutive_excess_count, 
+  y = ~excess_proportional_threshold, z = ~avg.f1.score, zmin = 0, zmax = max.avg.f1.score, width = 1000,
+  colorscale = "Jet", type = "contour", contours = list(showlabels = TRUE), 
+  showscale = FALSE) %>% # no colorbar 
+  layout(annotations = list(
+    list(x = 0.5, y = 1, xanchor = "center", yanchor = "bottom", align = "center", 
+      xref='paper', yref='paper', showarrow = FALSE, 
+      font = my.title.font, text = "ConPropExcess Task - HSA")))
+
+subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>% 
+  config(displayModeBar = FALSE)
+```
+
+<div class="blue-box">
+- The `ConExcess` method is the most *verbose* with regards to it's parameter space: a larger amount of parameter combinations can be attributed to higher mean F1-Scores.
+- The *mountain-peaks* in each task (where the tasks attain their maximum values) are close in the same (1D for the `Avg` task, 2D for the other 2 tasks) parameter sub-space when comparing Bliss vs HSA - i.e. **the synergy methods correlate in the parameter-space**.
+- Though Bliss had a statistical advantage over HSA in the raw data, when **comparing the average F1-Scores across all cell lines, the HSA synergy method resulted in the best result**.
+</div>
 
 # Bliss-all-combinations method {-}
 
