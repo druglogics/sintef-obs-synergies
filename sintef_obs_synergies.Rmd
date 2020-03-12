@@ -45,7 +45,7 @@ This difference in favor of Bliss:
 - The best average [F1-Score](#highest-f1-scored-task) **across all 8 cell lines** was produced by the `ConExcess` [method](#synergy-methods) (using **HSA**).
   - For the `AGS` cell line we have a **perfect synergy assement**: the [best task results match exactly](#bticlf1) the same synergies as the curated Gold-Standard for `AGS`!
 - The best combination of [parameters](#blissAllTbl) (`p_value_bonferroni` and `mean_bliss_threshold`) for the *Bliss-all-combinations* method (from [@Flobak2019]) that result in the highest average F1-Score across all 8 cell lines, **still perform lower than the highest ones attained using the rbbt tasks**.
-  - This best parameter combination comes extremely close to the values chosen (arbitrarily) by the authors of [@Flobak2019] to derive the synergies in a file given in the SI of that paper ([bliss_synergies.tsv](bliss_synergies.tsv)).
+  - This best parameter combination comes extremely close to the values chosen (arbitrarily) by the authors of [@Flobak2019] to derive the synergies in a file given in the SI of that paper (`bliss_synergies.tsv`).
 </div>
 
 # Input {-}
@@ -581,8 +581,8 @@ subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>%
 # Bliss-all-combinations method {-}
 
 The **Bliss-all-combinations method** (I arbitrarily chose the name) was the method that Barbara and Asmund used in [@Flobak2019] on the data from the first screen to find and visualize the synergies across all 8 cell lines. 
-The method is described in the text and Asmund wrote an *R* script that calculates the **average Bliss excesses** and **significance scores** (*p_values_Bliss.R* in the supplementary material - generates the [bliss_significance.tsv](bliss_significance.tsv) file). 
-Combinations with **average Bliss excess values** $<−0.08$ and *p-value* $<0.05$ (the *Bonferroni*-corrected) were classified as synergies (results were put into the [bliss_synergies.tsv](bliss_synergies.tsv) file in the SI of the paper).
+The method is described in the text and Asmund wrote an *R* script that calculates the **average Bliss excesses** and **significance scores** (*p_values_Bliss.R* in the supplementary material - generates the `bliss_significance.tsv` file). 
+Combinations with **average Bliss excess values** $<−0.08$ and *p-value* $<0.05$ (the *Bonferroni*-corrected) were classified as synergies (results were put into the `bliss_synergies.tsv` file in the SI of the paper).
 
 The two threshold values above (*average bliss excess* and the corrected *p-value*) were more-or-less **intuitively chosen** (a good-enough p-value + an OK negative threshold so to speak). 
 We now want to compare the synergies found with this method (across different combinations of the aforementioned parameters) with the [GS synergies](#gold-standard-synergies) in each cell line and see **which come closer to the curation-chosen ones**.
