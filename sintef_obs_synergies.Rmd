@@ -27,7 +27,7 @@ Note that throughout this analysis the term *SINTEF dataset* will refer to the f
 <br>
 By **methods** we refer to mathematical models like **Bliss and HSA (Highest Single Agent)** used for the synergy classification as well as to the data processing methodology for identification and extraction of the synergies from the dataset.
 
-Currently, this analysis is mostly based on the use of the [rbbt](http://mikisvaz.github.io/rbbt/) tool with its specified workflows and tasks for finding the observed synergies of the SINTEF dataset using various parameters as input.
+Currently, this analysis is mostly based on the use of the [rbbt](http://mikisvaz.github.io/rbbt/) tool with its specified workflows and tasks for finding the observed synergies of the SINTEF dataset using various parameters as input. Data results from [@Flobak2019] will also be assessed.
 
 # Summary {-}
 
@@ -41,9 +41,11 @@ This difference in favor of Bliss:
   - In the `Avg` and `ConExcess tasks`, HSA has a larger percentage of F1-Scores (∼5% and ∼9% more than Bliss respectively).
   - In the `ConPropExcess` task, Bliss has a larger percentage of F1-Scores (∼13% more compared to HSA).
   - The regression lines are below the `y=x` line: no matter the cell line or task, **there are always some Bliss-related methods that produce higher F1-Scores than the corresponding HSA ones**.
-  - The two synergy methods [correlate also in the parameter space](#parameter-space-plots))
-- The best average [F1-Score](#highest-f1-scored-task) **across all 8 cell lines** was produced by the `ConExcess` [method](#synergy-methods) and the **HSA synergy method**.
-  - For the `AGS` cell line we have a **perfect synergy assement**: the [best task results match exactly](#parameter-space-plots) the same synergies as the curated Gold-Standard for `AGS`!
+  - The two synergy methods [correlate also in the parameter space](#parameter-space-plots)
+- The best average [F1-Score](#highest-f1-scored-task) **across all 8 cell lines** was produced by the `ConExcess` [method](#synergy-methods) (using **HSA**).
+  - For the `AGS` cell line we have a **perfect synergy assement**: the [best task results match exactly](#bticlf1) the same synergies as the curated Gold-Standard for `AGS`!
+- The best combination of [parameters](#blissAllTbl) (`p_value_bonferroni` and `mean_bliss_threshold`) for the *Bliss-all-combinations* method (from [@Flobak2019]) that result in the highest average F1-Score across all 8 cell lines, **still perform lower than the highest ones attained using the rbbt tasks**.
+  - This best parameter combination comes extremely close to the values chosen (arbitrarily) by the authors of [@Flobak2019] to derive the synergies in a file given in the SI of that paper ([bliss_synergies.tsv](bliss_synergies.tsv)).
 </div>
 
 # Input {-}
@@ -492,6 +494,7 @@ rbbt workflow task SINTEF synergy_classification_by_consecutive_excesses --conse
 <br>
 
 The per-cell-line F1-Scores produced by the best task as found above are:
+<div id="bticlf1"></div>
 ```{r Best Task Individual Cell line F1-Scores}
 best.task.data = res.data %>%
   filter(task == "ConExcess", consecutive_excess_count == 2, excess_threshold == -0.17, ci_method == "hsa") %>%
@@ -577,14 +580,15 @@ subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>%
 
 # Bliss-all-combinations method {-}
 
-Barbara's **Bliss-all-combinations method** (I arbitrarily chose the name) was the method that she and Asmund used in [@Flobak2019] in the data from the first screen to find and visualize the synergies across all 8 cell lines. 
+The **Bliss-all-combinations method** (I arbitrarily chose the name) was the method that Barbara and Asmund used in [@Flobak2019] on the data from the first screen to find and visualize the synergies across all 8 cell lines. 
 The method is described in the text and Asmund wrote an *R* script that calculates the **average Bliss excesses** and **significance scores** (*p_values_Bliss.R* in the supplementary material - generates the [bliss_significance.tsv](bliss_significance.tsv) file). 
 Combinations with **average Bliss excess values** $<−0.08$ and *p-value* $<0.05$ (the *Bonferroni*-corrected) were classified as synergies (results were put into the [bliss_synergies.tsv](bliss_synergies.tsv) file in the SI of the paper).
 
-The 2 threshold values above (the *average bliss excess* and the *p-value*) were more-or-less arbitarily chosen. 
-We now want to compare the synergies found with this method (across different combinations of these 2 parameters) with the [GS synergies](#gold-standard-synergies) in each cell line and see **which come closer to the curation-chosen ones**.
+The two threshold values above (*average bliss excess* and the corrected *p-value*) were more-or-less **intuitively chosen** (a good-enough p-value + an OK negative threshold so to speak). 
+We now want to compare the synergies found with this method (across different combinations of the aforementioned parameters) with the [GS synergies](#gold-standard-synergies) in each cell line and see **which come closer to the curation-chosen ones**.
 
-```{r load all-combinations-method data, message=FALSE}
+We first load the data from the `bliss_significance.tsv` file and tidy 'em up a bit:
+```{r load all-combinations-method data, message=FALSE, cache=TRUE}
 bliss.all.comb.data = drop_na(read_tsv(file = "bliss_significance.tsv"))
 bliss.synergies = read_tsv(file = "bliss_synergies.tsv")
 
@@ -608,19 +612,90 @@ bliss.synergies = bliss.synergies %>%
     TRUE ~ cell_line
 ))
 
+# Remove rows with SF drug in the combination
+bliss.all.comb.data = bliss.all.comb.data %>% filter(!grepl('SF', drugcombo))
+bliss.synergies = bliss.synergies %>% filter(!grepl('SF', drugcombo))
+
+# Fix the drug names (add a dash between the drug names)
+bliss.all.comb.data = bliss.all.comb.data %>% 
+  mutate(drug_combo = str_replace(drugcombo, " ", "-")) %>% 
+  select(cell_line, drug_combo, mean.bliss.estimate, p.value.bonferroni)
+
 # below results are the same
 # cell.line = "AGS"
-# bliss.all.comb.data %>% 
-#   filter(p.value.bonferroni < 0.05, mean.bliss.estimate < -0.08, cell_line == cell.line) %>%
-#   filter(!grepl('SF', drugcombo))
+# bliss.all.comb.data %>% filter(p.value.bonferroni < 0.05, mean.bliss.estimate < -0.08, cell_line == cell.line)
 # bliss.synergies %>% filter(cell_line == cell.line, !grepl('SF', drugcombo))
 ```
 
+Next, we chose the parameter space for the two thresholds of interest:
 
+- $14$ corrected `p_value_bonferroni` from $0.00001$ to $0.05$ and the maximum one in the dataset (equal to $1$)
+- $42$ `mean_bliss_threshold` values from $\sim -0.5$ to $\sim +0.42$ with a step of $\sim 0.0227$
 
+We calculate for each combination of the above two parameters and for each cell line, the synergies found from this dataset and compare it with the GS synergies to derive an [F1-Score](#scoring-synergy-methods) for that parameter combination. Then we aggregate the results across the 8 cell lines per each parameter combination, to find the average F1-Score per (`p_value_bonferroni`, `mean_bliss_threshold`) combination:
+```{r Parameter Space Search all-bliss-comb method, cache=TRUE}
+p.values = c(0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.5, 1)
+bliss.thresholds = seq(from = min(bliss.all.comb.data$mean.bliss.estimate), to = max(bliss.all.comb.data$mean.bliss.estimate), length.out = 42)
 
+data.list = list()
+index = 1
 
+for (cell.line in cell.lines) {                                                 
+  gset = gs.list[[cell.line]]
+  for (p.value in p.values) {
+    for (threshold in bliss.thresholds) {
+      mset = bliss.all.comb.data %>% 
+        filter(p.value.bonferroni <= p.value, mean.bliss.estimate <= threshold, cell_line == cell.line) %>%
+        pull(drug_combo)
+      data.list[[index]] = tibble(cell_line = cell.line, p_value_bonferroni = p.value, mean_bliss_threshold = threshold, f1.score = get.score(gset, mset))
+      index = index + 1
+    }
+  }
+}
 
+bliss.all.comb.res = bind_rows(data.list)
+
+# Find avg F1-Score across all cell lines
+avg.f1.bliss.all = bliss.all.comb.res %>% 
+  group_by(p_value_bonferroni, mean_bliss_threshold) %>% 
+  summarise(avg.f1.score = mean(f1.score)) %>% 
+  ungroup()
+```
+
+<div id="blissAllTbl"></div>
+```{r Parameter Space Results all-bliss-comb method}
+caption.title = "Average F1-Score across 8 cell lines (Bliss-All-Combinations)"
+datatable(data = avg.f1.bliss.all, options = list(
+  order = list(list(3, 'desc'))),
+  caption = htmltools::tags$caption(caption.title, style="color:#dd4814; font-size: 18px")) %>%
+  formatRound(2:3, digits = 3)
+```
+
+<div class="blue-box">
+- Observing the results in the table above, we see the the first *sensible* result (i.e. with a `p_value_bonferroni` $<0.05$, so somewhat trustable :) that **holds the 4th largest F1-Score** ($0.453$), has a `mean_bliss_threshold` $\le -0.096$. 
+Thus the choice of Barbara and Asmund in [@Flobak2019] for `mean_bliss_threshold` $<−0.08$ and `p_value_bonferroni` $<0.05$ to derive the synergies was surely one of the best choices they could make (call it intuition or eye-balling, this choice is now mathematically substantiated)!
+- Even the largest average F1-Score, **cannot match the results of the highest scoring rbbt tasks** as seen in the [previous section](#highest-f1-scored-task).
+</div>
+<br>
+
+Visualizing the results of the above table using a contour plot we have:
+
+```{r Contour plot all-bliss-comb method}
+plot_ly(data = avg.f1.bliss.all, x = ~-log10(p_value_bonferroni), 
+  y = ~mean_bliss_threshold, z = ~avg.f1.score, zmin = 0, zmax = max.avg.f1.score, #width = 1000,
+  colorscale = "Jet", type = "contour", contours = list(showlabels = TRUE)) %>% 
+  colorbar(title = list(text = "Mean F1-Score \n(8 cell lines)", font = my.colorbar.font), 
+    tickmode = "linear", tick0 = 0, dtick = 0.1) %>%
+  layout(annotations = list(
+    list(x = 0.5, y = 1, xanchor = "center", yanchor = "bottom", align = "center", 
+      xref='paper', yref='paper', showarrow = FALSE, 
+      font = my.title.font, text = "Bliss-All-Combinations Method"))) %>% 
+  config(displayModeBar = FALSE)
+```
+
+<div class="blue-box">
+The larger the `p_value_bonferroni` (the values to the *right* of the above plot), the harder is to get a good value for the average F1-Score across all cell lines.
+</div>
 
 # Rbbt: Compare HSA Results (TO DELETE) {-}
 
