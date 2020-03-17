@@ -3,7 +3,7 @@ body {
   text-align: justify;
 }
 
-h1.title {
+.title {
   font-size: 45px;
   color: firebrick;
 }
@@ -16,16 +16,19 @@ h1,h2,h3,h4,h5 {
   background-color: #e6f0ff;
   border-radius: 5px;
   padding: 20px;
+  margin-bottom: 10px;
 }
 
 .green-box {
   background-color: #d9ffe9;
   border-radius: 5px;
   padding: 20px;
+  margin-bottom: 10px;
 }
 
 .orange-box {
   background-color: #ffeedf;
   border-radius: 5px;
   padding: 20px;
+  margin-bottom: 10px;
 }
