@@ -24,7 +24,7 @@ link-citations: true
 The purpose of this analysis is to compare as many as possible **tools and methods** that we have in our disposal in order to classify the synergies observed in the dataset that was published by [@Flobak2019]. 
 Note that throughout this analysis the term *SINTEF dataset* will refer to the first screen dataset from that paper.
 </div>
-<br>
+
 By **methods** we refer to mathematical models like **Bliss and HSA (Highest Single Agent)** used for the synergy classification as well as to the data processing methodology for identification and extraction of the synergies from the dataset.
 
 Currently, this analysis is mostly based on the use of the [rbbt](http://mikisvaz.github.io/rbbt/) tool with its specified workflows and tasks for finding the observed synergies of the SINTEF dataset using various parameters as input. Data results from [@Flobak2019] will also be assessed.
@@ -242,7 +242,6 @@ ggboxplot(data = res.data, x = "ci_method", y = "f1.score",
 <div class="blue-box">
 Seems that there is a **small difference in favor of the bliss-related tasks**
 </div>
-<br>
 
 Let's check if the same trend can be seen when we split the raw data per cell line:
 
@@ -259,7 +258,6 @@ ggboxplot(data = res.data, x = "cell_line", y = "f1.score", fill = "ci_method",
 - For 5 out of 8 cell lines there is no task with any combination of parameters which managed to match exactly the synergies from the curation gold-standard (**no `F1-Score == 1` for some cell lines**).
 - The statistical difference between Bliss and HSA is variant across the cell lines with **at least half of them showing no difference at all**.
 </div>
-<br>
 
 Grouping the data per task we have:
 <div id="bvhpt"></div>
@@ -275,7 +273,6 @@ ggboxplot(data = res.data, x = "task", y = "f1.score", fill = "ci_method",
 - There is **no statistical difference between Bliss and HSA** in the `Avg` and `ConExcess` tasks.
 - **Bliss has a statistical significant difference from HSA** in the `ConPropExcess` task.
 </div>
-<br>
 
 ### Bliss vs HSA (Seperate Tasks)
 
@@ -305,7 +302,6 @@ ggboxplot(data = res.data %>% filter(task == "ConPropExcess"), x = "cell_line", 
 So the choice of cell line seems to not play an important role.
 - But no matter the task, **there is most of the times a Bliss method that will outperform any HSA-based one, in any given cell line**.
 </div>
-<br>
 
 ### Bliss vs HSA (Correlation)
 
@@ -415,7 +411,6 @@ Our job now is to find the task with the set of parameters that will give the **
 
 So we will aggragate the results across the 8 cell lines by producing **the average F1-Score** for each specific synergy task with all its combination of parameters (for both Bliss and HSA).
 </div>
-<br>
 
 We calculate the average F1-Scores per task and find the maximum ones across all cell lines:
 ```{r Find fittest task}
@@ -504,7 +499,6 @@ datatable(data = best.task.data, options = list(dom = "t"))
 <div class="green-box">
 For the `AGS` cell line we have a **perfect synergy assement**: the best task results match exactly the same synergies as the curated Gold-Standard for `AGS`!
 </div>
-<br>
 
 ### Parameter Space Plots
 
@@ -676,7 +670,6 @@ datatable(data = avg.f1.bliss.all, options = list(
 Thus the choice of Barbara and Asmund in [@Flobak2019] for `mean_bliss_threshold` $<−0.08$ and `p_value_bonferroni` $<0.05$ to derive the synergies was surely one of the best choices they could make (call it intuition or eye-balling, this choice is now mathematically substantiated)!
 - Even the largest average F1-Score, **cannot match the results of the highest scoring rbbt tasks** as seen in the [previous section](#highest-f1-scored-task).
 </div>
-<br>
 
 Visualizing the results of the above table using a contour plot we have:
 
@@ -696,90 +689,5 @@ plot_ly(data = avg.f1.bliss.all, x = ~-log10(p_value_bonferroni),
 <div class="blue-box">
 The larger the `p_value_bonferroni` (the values to the *right* of the above plot), the harder is to get a good value for the average F1-Score across all cell lines.
 </div>
-
-# Rbbt: Compare HSA Results (TO DELETE) {-}
-
-Consider this to be a *side-quest* investigation!
-
-## Aim {-}
-
-Compare two results:
-
-1. **HSA-based synergies that Vasundra used in INSIDE** (INfluential NoDE AnalySIs, **4 cell lines**) - included in Barbara's modeling paper
-2. **Barbara's HSA results** in rbbt's `observed_synergies_averaged` task (which takes as input a file that she had given to Miguel a while ago and which she said to me once that she has everything there *averaged*).
-
-## Compare Results {-}
-
-<div class="orange-box">
-Note that we did some task renaming in rbbt's `SINTEF` workflow tasks so the R code for this section to run needs a `SINTEF` workflow that is no further than the commit **d1a2e5**! (the task `observed_synergies_averaged` that used Barbara's file **is no longer used**). 
-Thus, the following code is shown but not executed in this current version of the document.
-</div>
-
-Getting the results in appropriate format:
-```{r INSIDE Observed Synergies, eval=FALSE, include=TRUE}
-# File with the synergies as used in the Influential Node Analysis (that Vasundra gave me!)
-inside.obs.synergies.file = paste0(getwd(), "/20190205_Synergy_HSA.txt")
-df = read.table(file = inside.obs.synergies.file, header = TRUE, sep = "\t")
-
-# Turn FALSE,TRUE to 0,1
-cols = sapply(df, is.logical)
-df[,cols] = lapply(df[,cols], as.numeric)
-
-# AGS
-ags.obs = df %>% filter(AGS == 1) %>% select(Combination)
-ags.obs.synergies = as.character(ags.obs$Combination)
-ags.obs.synergies = sort(ags.obs.synergies)
-
-ags.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="AGS", method="HSA", observed_threshold=-0.11, log="0", type = "array")
-ags.obs.synergies.2 = ags.obs.2[!grepl(pattern = "SF", x = ags.obs.2)]
-ags.obs.synergies.2 = str_replace_all(string = ags.obs.synergies.2, pattern = "~", replacement = "-")
-ags.obs.synergies.2 = sort(ags.obs.synergies.2)
-
-# Colo205
-colo205.obs = df %>% filter(COLO205 == 1) %>% select(Combination)
-colo205.obs.synergies = as.character(colo205.obs$Combination)
-colo205.obs.synergies = sort(colo205.obs.synergies)
-
-colo205.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="Colo205", method="HSA", observed_threshold=-0.11, log="0", type = "array")
-colo205.obs.synergies.2 = colo205.obs.2[!grepl(pattern = "SF", x = colo205.obs.2)]
-colo205.obs.synergies.2 = str_replace_all(string = colo205.obs.synergies.2, pattern = "~", replacement = "-")
-colo205.obs.synergies.2 = sort(colo205.obs.synergies.2)
-
-# DU145
-du145.obs = df %>% filter(DU145 == 1) %>% select(Combination)
-du145.obs.synergies = as.character(du145.obs$Combination)
-du145.obs.synergies = sort(du145.obs.synergies)
-
-du145.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="DU145", method="HSA", observed_threshold=-0.11, log="0", type = "array")
-du145.obs.synergies.2 = du145.obs.2[!grepl(pattern = "SF", x = du145.obs.2)]
-du145.obs.synergies.2 = str_replace_all(string = du145.obs.synergies.2, pattern = "~", replacement = "-")
-du145.obs.synergies.2 = sort(du145.obs.synergies.2)
-
-# SW620
-sw620.obs = df %>% filter(SW620 == 1) %>% select(Combination)
-sw620.obs.synergies = as.character(sw620.obs$Combination)
-sw620.obs.synergies = sort(sw620.obs.synergies)
-
-sw620.obs.2 = rbbt.job("SINTEF", "observed_synergies_averaged", cell_line="SW620", method="HSA", observed_threshold=-0.11, log="0", type = "array")
-sw620.obs.synergies.2 = sw620.obs.2[!grepl(pattern = "SF", x = sw620.obs.2)]
-sw620.obs.synergies.2 = str_replace_all(string = sw620.obs.synergies.2, pattern = "~", replacement = "-")
-sw620.obs.synergies.2 = sort(sw620.obs.synergies)
-```
-
-Comparing them:
-```{r Compare vectors of synergies, results='asis', eval=FALSE, include=TRUE}
-# Everything here executed with not errors (vectors were the same)
-stopifnot(all(ags.obs.synergies == ags.obs.synergies.2))
-stopifnot(all(colo205.obs.synergies == colo205.obs.synergies.2))
-stopifnot(all(du145.obs.synergies == du145.obs.synergies.2))
-stopifnot(all(sw620.obs.synergies == sw620.obs.synergies.2))
-```
-
-## Summary {-}
-
-<div class="blue-box">
-The observed synergies for the 4 cell lines (`AGS`, `Colo205`, `DU145` and `SW620`) used by Vasundra for the influential node analysis **are the same ones** as they were calculated using HSA (average method) in a file Barbara had given Miguel and he exposed to `rbbt` as a task called **observed_synergies_averaged** under the `SINTEF` workflow (and using $observed\_threshold=-0.11$).
-</div>
-</br>
 
 # References {-}
