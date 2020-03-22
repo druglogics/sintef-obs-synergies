@@ -53,3 +53,4 @@ get.score = function(gset, mset) {
   score = (hits - misses + mset.len)/(gset.len + mset.len)
   return(score)
 }
+
