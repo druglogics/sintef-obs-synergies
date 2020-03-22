@@ -50,7 +50,7 @@ This difference in favor of Bliss:
 
 # Input {-}
 
-Loading libraries and helping functions:
+Loading libraries:
 ```{r Load libraries, message = FALSE}
 library(usefun)
 library(dplyr)
@@ -61,8 +61,10 @@ library(plotly)
 library(DT)
 library(ggpubr)
 library(RColorBrewer)
+```
 
-source(file = "fun.R")
+Loading helping functions from `fun.R`:
+```{r, code=readLines('fun.R')}
 ```
 
 # Rbbt: Synergies {-}
