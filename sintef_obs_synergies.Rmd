@@ -599,7 +599,7 @@ subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>%
 ::: {.blue-box}
 - The `ConExcess` method is the most *verbose* with regards to it's parameter space: a larger amount of parameter combinations can be attributed to higher mean F1-Scores.
 - The *mountain-peaks* in each task (where the tasks attain their maximum values) are close in the same (1D for the `Avg` task, 2D for the other 2 tasks) parameter sub-space when comparing Bliss vs HSA - i.e. **the synergy methods correlate in the parameter-space**.
-- Though Bliss had a statistical advantage over HSA in the raw data, when **comparing the average F1-Scores across all cell lines, the HSA synergy method resulted in the best result**.
+- The small statistical advantage that Bliss had over HSA in the raw data can still be seen in the 2D contour plots of the `Avg` and `ConPropExcess` task when **comparing the average F1-Scores across all cell lines**, but in the end the HSA synergy method in the `ConExcess` task resulted in the best result with the given parameter space.
 :::
 
 # Bliss-all-combinations method {-}
