@@ -276,22 +276,34 @@ ggboxplot(data = res.data, x = "task", y = "f1.score", fill = "ci_method",
 - **Bliss has a statistical significant difference from HSA** in the `ConPropExcess` task.
 :::
 
-### Bliss vs HSA (Seperate Tasks)
+### Bliss vs HSA (Seperate Tasks) {.tabset}
 
 We will now compare Bliss vs HSA synergy methods for each different task in separate graphs.
 This will allow us to observe **if in each task there is a small Bliss advantage over HSA, or if it actually depends more on each cell line**:
 
-```{r Bliss vs HSA per cell line (diff graph/task), cache=TRUE, fig.align="center", warning=FALSE} 
+#### Avg task
+
+```{r Bliss vs HSA per cell line (Avg task), cache=TRUE, fig.align="center", warning=FALSE} 
 ggboxplot(data = res.data %>% filter(task == "Avg"), x = "cell_line", y = "f1.score", 
   fill = "ci_method", title = "Bliss vs HSA per cell line (Task: Avg)",
   xlab = "Cell lines", ylab = "F1-Score", palette = "Set1") + 
   stat_compare_means(aes(group = ci_method), label = "p.signif") +
   theme(axis.text.x = element_text(size = 11))
+```
+
+#### ConExcess task
+
+```{r Bliss vs HSA per cell line (ConExcess task), cache=TRUE, fig.align="center", warning=FALSE}
 ggboxplot(data = res.data %>% filter(task == "ConExcess"), x = "cell_line", y = "f1.score", 
   fill = "ci_method", title = "Bliss vs HSA per cell line (Task: ConExcess)",
   xlab = "Cell lines", ylab = "F1-Score", palette = "Set1") +
   stat_compare_means(aes(group = ci_method), label = "p.signif") +
   theme(axis.text.x = element_text(size = 11))
+```
+
+#### ConPropExcess task
+
+```{r Bliss vs HSA per cell line (ConPropExcess task), cache=TRUE, fig.align="center", warning=FALSE}
 ggboxplot(data = res.data %>% filter(task == "ConPropExcess"), x = "cell_line", y = "f1.score", 
   fill = "ci_method", title = "Bliss vs HSA per cell line (Task: ConPropExcess)",
   xlab = "Cell lines", ylab = "F1-Score", palette = "Set1") + 
@@ -299,17 +311,20 @@ ggboxplot(data = res.data %>% filter(task == "ConPropExcess"), x = "cell_line", 
   theme(axis.text.x = element_text(size = 11))
 ```
 
+### {-}
+
 ::: {.blue-box}
 - There is **no strong difference between Bliss vs HSA methods in the same SINTEF task across all cell lines**.
 So the choice of cell line seems to not play an important role.
 - But no matter the task, **there is most of the times a Bliss method that will outperform any HSA-based one, in any given cell line**.
 :::
 
-### Bliss vs HSA (Correlation)
+### Bliss vs HSA (Correlation) {.tabset}
 
 Now we tidy our raw data, in order to compare **homogenous data points** - i.e. coming from the same task, parameters and cell line, only different synergy method (Bliss vs HSA).
 
-First for the `Avg` task:
+#### Avg task
+
 ```{r Bliss vs HSA correlation (Avg task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
 data.task.avg = res.data %>% 
   filter(task == "Avg") %>% 
@@ -337,7 +352,8 @@ ggscatter(data = data.task.avg, x = "f1.score", y = "f1.score1", color = "cell_l
   annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.avg.counts$larger/sum(task.avg.counts), digits = 2), "%"), x = 0.15, y = 0.8)
 ```
 
-Next for the `ConExcess` task:
+#### ConExcess task
+
 ```{r Bliss vs HSA correlation (ConExcess task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
 data.task.con.excess = res.data %>% 
   filter(task == "ConExcess") %>% 
@@ -365,7 +381,8 @@ ggscatter(data = data.task.con.excess, x = "f1.score", y = "f1.score1", color = 
   annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.con.excess.counts$larger/sum(task.con.excess.counts), digits = 2), "%"), x = 0.15, y = 0.8)
 ```
 
-Lastly, for the `ConPropExcess` task:
+#### ConPropExcess task
+
 ```{r Bliss vs HSA correlation (ConPropExcess task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
 data.task.con.prop.excess = res.data %>% 
   filter(task == "ConPropExcess") %>% 
@@ -392,6 +409,8 @@ ggscatter(data = data.task.con.prop.excess, x = "f1.score", y = "f1.score1", col
   annotate(geom = "text", label = paste0("Bliss = HSA: ", signif(100*task.con.prop.excess.counts$equal/sum(task.con.prop.excess.counts), digits = 2), "%"), x = 0.15, y = 0.7) +
   annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.con.prop.excess.counts$larger/sum(task.con.prop.excess.counts), digits = 2), "%"), x = 0.15, y = 0.6)
 ```
+
+### {-}
 
 ::: {.blue-box}
 - Bliss results correlate with HSA ones more on `ConPropExcess` task, less on the `ConExcess` task and even less on the `Avg` task. 
@@ -503,9 +522,11 @@ datatable(data = best.task.data, options = list(dom = "t"))
 For the `AGS` cell line we have a **perfect synergy assement**: the best task results match exactly the same synergies as the curated Gold-Standard for `AGS`!
 :::
 
-### Parameter Space Plots
+### Parameter Space Plots {.tabset}
 
 We now visualize the **parameter space** for each task and per *ci_method* (Bliss vs HSA):
+
+#### Avg task
 
 ```{r Parameter Space - Avg task}
 # title font style
@@ -518,6 +539,8 @@ plot_ly(data = avg.f1.task.avg, x = ~excess_threshold, y = ~avg.f1.score, width 
     yaxis = list(title = "Mean F1-Score")) %>%
   config(displayModeBar = FALSE)
 ```
+
+#### ConExcess task
 
 ```{r Parameter Contour plots - ConExcess Task}
 # font style
@@ -545,6 +568,8 @@ subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>%
   config(displayModeBar = FALSE)
 ```
 
+#### ConPropExcess task
+
 ```{r Parameter Contour plots - ConPropExcess Task}
 fig1 = plot_ly(avg.f1.task.con.prop.excess %>% filter(ci_method == "bliss"), x = ~consecutive_excess_count, 
   y = ~excess_proportional_threshold, z = ~avg.f1.score, zmin = 0, zmax = max.avg.f1.score, width = 1000,
@@ -568,6 +593,8 @@ fig2 = plot_ly(avg.f1.task.con.prop.excess %>% filter(ci_method == "hsa"), x = ~
 subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>% 
   config(displayModeBar = FALSE)
 ```
+
+### {-}
 
 ::: {.blue-box}
 - The `ConExcess` method is the most *verbose* with regards to it's parameter space: a larger amount of parameter combinations can be attributed to higher mean F1-Scores.
