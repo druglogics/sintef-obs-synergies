@@ -64,7 +64,7 @@ library(RColorBrewer)
 ```
 
 Loading helping functions from `fun.R`:
-```{r, code=readLines('fun.R')}
+```{r read functions, code=readLines('fun.R')}
 ```
 
 # Rbbt: Synergies {-}
@@ -144,7 +144,7 @@ And these are:
 ```{r GS Synergies per cell line, results='asis'}
 cell.lines = c("A498", "AGS", "Colo205", "DU145", "MDA-MB-468", "SF295", "SW620", "UACC62")
 
-print.gs.synergies = function() {
+gs.print = function() {
   pretty_print_string("")
   for (cell.line in cell.lines) {
     pretty_print_bold_string(string = cell.line, with.gt = FALSE)
@@ -155,7 +155,7 @@ print.gs.synergies = function() {
   }
 }
 
-print.gs.synergies()
+gs.print()
 ```
 
 ## Scoring Synergy Methods {-}
@@ -208,9 +208,9 @@ For the advanced reader, note that the *hits-and-misses* $score_{hm}$, is actual
 $$score_{hm}=\frac{hits-misses+l_{mset}}{l_{gset}+l_{mset}}=\frac{TP-FP+TP+FP}{TP+FN+TP+FP}=\frac{2\times TP}{2\times TP+FN+FP}=F_1$$
 :::
 
-## Analysis {-}
+# Rbbt tasks Analysis {-}
 
-To perform a complete search on the [methods](#synergy-methods) parameter space and derive a score for each method (with a specific parameter combination in each case), run [this script](run_rbbt_sintef_synergy_tasks.R).
+To perform a complete search on the [methods](#synergy-methods) parameter space and derive a score for each method (with a specific parameter combination in each case), run [this script](../run_rbbt_sintef_synergy_tasks.R).
 We have already run it for efficiency and now simply load the result object to continue with the analysis:
 ```{r Load results}
 res.data = as_tibble(readRDS(file = "res_data.rds"))
@@ -227,7 +227,7 @@ and parameters (applicable to specific tasks):
 - $51$ *excess_threshold*'s (from $0$ to $-0.5$ with a step of $-0.01$) and
 - $33$ *excess_proportional_threshold*'s (from $0$ to $0.8$ with a $0.025$ step).
 
-### Bliss vs HSA (General Comparison)
+## Bliss vs HSA (Raw data)
 
 Let's compare **from the raw data** (so not matching them exactly parameter-to-parameter) the two mathematical models that were used in the calculation of synergies.
 First, we will do that across all possible tasks, cell lines and parameters:
@@ -276,12 +276,12 @@ ggboxplot(data = res.data, x = "task", y = "f1.score", fill = "ci_method",
 - **Bliss has a statistical significant difference from HSA** in the `ConPropExcess` task.
 :::
 
-### Bliss vs HSA (Seperate Tasks) {.tabset}
+## Bliss vs HSA (Seperate Tasks) {.tabset}
 
 We will now compare Bliss vs HSA synergy methods for each different task in separate graphs.
 This will allow us to observe **if in each task there is a small Bliss advantage over HSA, or if it actually depends more on each cell line**:
 
-#### Avg task
+### Avg task
 
 ```{r Bliss vs HSA per cell line (Avg task), cache=TRUE, fig.align="center", warning=FALSE} 
 ggboxplot(data = res.data %>% filter(task == "Avg"), x = "cell_line", y = "f1.score", 
@@ -291,7 +291,7 @@ ggboxplot(data = res.data %>% filter(task == "Avg"), x = "cell_line", y = "f1.sc
   theme(axis.text.x = element_text(size = 11))
 ```
 
-#### ConExcess task
+### ConExcess task
 
 ```{r Bliss vs HSA per cell line (ConExcess task), cache=TRUE, fig.align="center", warning=FALSE}
 ggboxplot(data = res.data %>% filter(task == "ConExcess"), x = "cell_line", y = "f1.score", 
@@ -301,7 +301,7 @@ ggboxplot(data = res.data %>% filter(task == "ConExcess"), x = "cell_line", y = 
   theme(axis.text.x = element_text(size = 11))
 ```
 
-#### ConPropExcess task
+### ConPropExcess task
 
 ```{r Bliss vs HSA per cell line (ConPropExcess task), cache=TRUE, fig.align="center", warning=FALSE}
 ggboxplot(data = res.data %>% filter(task == "ConPropExcess"), x = "cell_line", y = "f1.score", 
@@ -311,7 +311,7 @@ ggboxplot(data = res.data %>% filter(task == "ConPropExcess"), x = "cell_line", 
   theme(axis.text.x = element_text(size = 11))
 ```
 
-### {-}
+## {-}
 
 ::: {.blue-box}
 - There is **no strong difference between Bliss vs HSA methods in the same SINTEF task across all cell lines**.
@@ -319,11 +319,11 @@ So the choice of cell line seems to not play an important role.
 - But no matter the task, **there is most of the times a Bliss method that will outperform any HSA-based one, in any given cell line**.
 :::
 
-### Bliss vs HSA (Correlation) {.tabset}
+## Bliss vs HSA (Correlation) {.tabset}
 
 Now we tidy our raw data, in order to compare **homogenous data points** - i.e. coming from the same task, parameters and cell line, only different synergy method (Bliss vs HSA).
 
-#### Avg task
+### Avg task
 
 ```{r Bliss vs HSA correlation (Avg task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
 data.task.avg = res.data %>% 
@@ -352,7 +352,7 @@ ggscatter(data = data.task.avg, x = "f1.score", y = "f1.score1", color = "cell_l
   annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.avg.counts$larger/sum(task.avg.counts), digits = 2), "%"), x = 0.15, y = 0.8)
 ```
 
-#### ConExcess task
+### ConExcess task
 
 ```{r Bliss vs HSA correlation (ConExcess task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
 data.task.con.excess = res.data %>% 
@@ -381,7 +381,7 @@ ggscatter(data = data.task.con.excess, x = "f1.score", y = "f1.score1", color = 
   annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.con.excess.counts$larger/sum(task.con.excess.counts), digits = 2), "%"), x = 0.15, y = 0.8)
 ```
 
-#### ConPropExcess task
+### ConPropExcess task
 
 ```{r Bliss vs HSA correlation (ConPropExcess task), fig.width=6, fig.height=6, fig.align="center", cache=TRUE}
 data.task.con.prop.excess = res.data %>% 
@@ -410,7 +410,7 @@ ggscatter(data = data.task.con.prop.excess, x = "f1.score", y = "f1.score1", col
   annotate(geom = "text", label = paste0("Bliss > HSA: ", signif(100*task.con.prop.excess.counts$larger/sum(task.con.prop.excess.counts), digits = 2), "%"), x = 0.15, y = 0.6)
 ```
 
-### {-}
+## {-}
 
 ::: {.blue-box}
 - Bliss results correlate with HSA ones more on `ConPropExcess` task, less on the `ConExcess` task and even less on the `Avg` task. 
@@ -425,7 +425,7 @@ So the **more sophisticated** the method is, the **larger the correlation** betw
 - In all 3 graphs above, **the regression line is below the `y=x` line** which means that there are higher Bliss values produced by some methods (no matter the task or cell line): these **(outlier-sort-of) Bliss results outperform the HSA similar ones**.
 :::
 
-### Highest F1-Scored Task
+## Highest F1-Scored Task
 
 ::: {.info-box .important}
 Our job now is to find the task with the set of parameters that will give the **best (HSA or Bliss-based) F1-score across all the cell lines** tested - i.e. the task that best *fits* the curated GS across all cell lines.
@@ -522,11 +522,49 @@ datatable(data = best.task.data, options = list(dom = "t"))
 For the `AGS` cell line we have a **perfect synergy assement**: the best task results match exactly the same synergies as the curated Gold-Standard for `AGS`!
 :::
 
-### Parameter Space Plots {.tabset}
+## GS vs Best Task
+
+We have executed the [run_best_task.R](../run_best_task.R) script in order to get the synergies found with this best chosen task and parameters.
+We load this list of synergies:
+```{r Best task synergies}
+# 'best.list' = best list (of synergies) vs 'gs.list' = gold standard list (of synergies)
+best.list = readRDS(file = "best_data.rds")
+```
+
+So, for `AGS` the results are the same but what about the other cell lines that didn't have a perfect F1-Score?
+We will now take a closer look at the `FP` and `FN` synergies produced by the best task for each cell line:
+```{r FP and FN synergies for best task, results='asis'}
+best.task.print = function() {
+  pretty_print_string("")
+  for (cell.line in cell.lines) {
+    pretty_print_bold_string(string = cell.line, with.gt = FALSE)
+    print_empty_line(html.output = TRUE)
+    
+    fp = best.list[[cell.line]][!best.list[[cell.line]] %in% gs.list[[cell.line]]]
+    fn = gs.list[[cell.line]][!gs.list[[cell.line]] %in% best.list[[cell.line]]]
+    
+    pretty_print_vector_values(vec = fp, vector.values.str = "False Positives", with.gt = FALSE)
+    print_empty_line(html.output = TRUE)
+    
+    pretty_print_vector_values(vec = fn, vector.values.str = "False Negatives", with.gt = FALSE)
+    print_empty_line(html.output = TRUE)
+    print_empty_line(html.output = TRUE)
+  }
+}
+best.task.print()
+```
+
+::: {.blue-box}
+In total, there are $16$ false positives (synergies the best method got wrong) and $11$ false negatives (synergies the best method didn't get at all) comparing to the curation gold-standard synergies.
+
+This is intriguing since the best method `ConExcess` represents a kind of **visual mathematical method** for synergy identification: at least $2$ consecutive points have to be less than the $-0.17$ (threshold) from the non-interaction line, which holds true for all the $FP$ synergies (and not for the $FN$ ones) but this differs to what the *human eye* captures as synergy or not!
+:::
+
+## Parameter Space Plots {.tabset}
 
 We now visualize the **parameter space** for each task and per *ci_method* (Bliss vs HSA):
 
-#### Avg task
+### Avg task
 
 ```{r Parameter Space - Avg task}
 # title font style
@@ -540,7 +578,7 @@ plot_ly(data = avg.f1.task.avg, x = ~excess_threshold, y = ~avg.f1.score, width 
   config(displayModeBar = FALSE)
 ```
 
-#### ConExcess task
+### ConExcess task
 
 ```{r Parameter Contour plots - ConExcess Task}
 # font style
@@ -568,7 +606,7 @@ subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>%
   config(displayModeBar = FALSE)
 ```
 
-#### ConPropExcess task
+### ConPropExcess task
 
 ```{r Parameter Contour plots - ConPropExcess Task}
 fig1 = plot_ly(avg.f1.task.con.prop.excess %>% filter(ci_method == "bliss"), x = ~consecutive_excess_count, 
@@ -594,7 +632,7 @@ subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>%
   config(displayModeBar = FALSE)
 ```
 
-### {-}
+## {-}
 
 ::: {.blue-box}
 - The `ConExcess` method is the most *verbose* with regards to it's parameter space: a larger amount of parameter combinations can be attributed to higher mean F1-Scores.
