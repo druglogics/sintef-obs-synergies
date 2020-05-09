@@ -45,7 +45,7 @@ This difference in favor of Bliss:
 - The best average [F1-Score](#highest-f1-scored-task) **across all 8 cell lines** was produced by the `ConExcess` [method](#synergy-methods) (using **HSA**).
   - For the `AGS` cell line we have a **perfect synergy assement**: the [best task results match exactly](#bticlf1) the same synergies as the curated Gold-Standard for `AGS`!
 - The best combination of [parameters](#blissAllTbl) (`p_value_bonferroni` and `mean_bliss_threshold`) for the *Bliss-all-combinations* method (from [@Flobak2019]) that result in the highest average F1-Score across all 8 cell lines, **still perform lower than the highest ones attained using the rbbt tasks**.
-  - This best parameter combination comes extremely close to the values chosen (arbitrarily) by the authors of [@Flobak2019] to derive the synergies in a file given in the SI of that paper ([bliss_synergies.tsv](../bliss_synergies.tsv)).
+  - This best parameter combination comes extremely close to the values chosen (arbitrarily) by the authors of [@Flobak2019] to derive the synergies in a file given in the SI of that paper ([bliss_synergies.tsv](https://github.com/druglogics/sintef-obs-synergies/blob/master/bliss_synergies.tsv)).
 :::
 
 # Input {-}
@@ -63,7 +63,7 @@ library(ggpubr)
 library(RColorBrewer)
 ```
 
-Loading helping functions from `fun.R`:
+Loading helping functions from [fun.R](https://github.com/druglogics/sintef-obs-synergies/blob/master/fun.R):
 ```{r read functions, code=readLines('fun.R')}
 ```
 
@@ -96,7 +96,7 @@ tar xzvf sintef.combination.index.hsa.tar.gz
 
 2. Compute the `bliss` and `hsa` task results from the SINTEF dataset (DIY way)
 
-  Given an `rbbt.SINTEF.image` (ask the author for it), and a `SINTEF` workflow at least at commit `947307b`, you can use the [run_cimbinator.sh](../run_cimbinator.sh) script to produce the data results.
+  Given an `rbbt.SINTEF.image` (ask the author for it), and a `SINTEF` workflow at least at commit `947307b`, you can use the [run_cimbinator.sh](https://raw.githubusercontent.com/druglogics/sintef-obs-synergies/master/run_cimbinator.sh) script to produce the data results.
 
 ## Synergy Methods {-}
 
@@ -135,7 +135,7 @@ df %>%
 
 ## Gold-Standard Synergies {-}
 
-So, for each respective cell line we get the *gold-curated* standard (GS) synergies (already pre-calculated using [this script](../run_rbbt_sintef_synergy_tasks.R)):
+So, for each respective cell line we get the *gold-curated* standard (GS) synergies (already pre-calculated using [this script](https://github.com/druglogics/sintef-obs-synergies/blob/master/run_rbbt_sintef_synergy_tasks.R)):
 ```{r GS Synergies compute}
 gs.list = readRDS(file = "gs_list.rds")
 ```
@@ -210,7 +210,7 @@ $$score_{hm}=\frac{hits-misses+l_{mset}}{l_{gset}+l_{mset}}=\frac{TP-FP+TP+FP}{T
 
 # Rbbt tasks Analysis {-}
 
-To perform a complete search on the [methods](#synergy-methods) parameter space and derive a score for each method (with a specific parameter combination in each case), run [this script](../run_rbbt_sintef_synergy_tasks.R).
+To perform a complete search on the [methods](#synergy-methods) parameter space and derive a score for each method (with a specific parameter combination in each case), run [this script](https://github.com/druglogics/sintef-obs-synergies/blob/master/run_rbbt_sintef_synergy_tasks.R).
 We have already run it for efficiency and now simply load the result object to continue with the analysis:
 ```{r Load results}
 res.data = as_tibble(readRDS(file = "res_data.rds"))
@@ -524,7 +524,7 @@ For the `AGS` cell line we have a **perfect synergy assement**: the best task re
 
 ## GS vs Best Task
 
-We have executed the [run_best_task.R](../run_best_task.R) script in order to get the synergies found with this best chosen task and parameters.
+We have executed the [run_best_task.R](https://github.com/druglogics/sintef-obs-synergies/blob/master/run_best_task.R) script in order to get the synergies found with this best chosen task and parameters.
 We load this list of synergies:
 ```{r Best task synergies}
 # 'best.list' = best list (of synergies) vs 'gs.list' = gold standard list (of synergies)
@@ -643,13 +643,13 @@ subplot(fig1, fig2, titleX = TRUE, titleY = TRUE, margin = 0.05) %>%
 # Bliss-all-combinations method {-}
 
 The **Bliss-all-combinations method** (I arbitrarily chose the name) was the method that Barbara and Asmund used in [@Flobak2019] on the data from the first screen to find and visualize the synergies across all 8 cell lines. 
-The method is described in the text and Asmund wrote an *R* script that calculates the **average Bliss excesses** and **significance scores** (*p_values_Bliss.R* in the supplementary material - generates the [bliss_significance.tsv](../bliss_significance.tsv) file). 
-Combinations with **average Bliss excess values** $<−0.08$ and *p-value* $<0.05$ (the *Bonferroni*-corrected) were classified as synergies (results were put into the [bliss_synergies.tsv](../bliss_synergies.tsv) file in the SI of the paper).
+The method is described in the text and Asmund wrote an *R* script that calculates the **average Bliss excesses** and **significance scores** (*p_values_Bliss.R* in the supplementary material - generates the [bliss_significance.tsv](https://github.com/druglogics/sintef-obs-synergies/blob/master/bliss_significance.tsv) file). 
+Combinations with **average Bliss excess values** $<−0.08$ and *p-value* $<0.05$ (the *Bonferroni*-corrected) were classified as synergies (results were put into the [bliss_synergies.tsv](https://github.com/druglogics/sintef-obs-synergies/blob/master/bliss_synergies.tsv) file in the SI of the paper).
 
 The two threshold values above (*average bliss excess* and the corrected *p-value*) were more-or-less **intuitively chosen** (a good-enough p-value + an OK negative threshold so to speak). 
 We now want to compare the synergies found with this method (across different combinations of the aforementioned parameters) with the [GS synergies](#gold-standard-synergies) in each cell line and see **which come closer to the curation-chosen ones**.
 
-We first load the data from the [bliss_significance.tsv](../bliss_significance.tsv) file and tidy 'em up a bit:
+We first load the data from the [bliss_significance.tsv](https://github.com/druglogics/sintef-obs-synergies/blob/master/bliss_significance.tsv) file and tidy 'em up a bit:
 ```{r load all-combinations-method data, message=FALSE, cache=TRUE}
 bliss.all.comb.data = drop_na(read_tsv(file = "bliss_significance.tsv"))
 bliss.synergies = read_tsv(file = "bliss_synergies.tsv")
