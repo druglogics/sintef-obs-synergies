@@ -27,7 +27,10 @@ Note that throughout this analysis the term *SINTEF dataset* will refer to the f
 
 By **methods** we refer to mathematical models like **Bliss and HSA (Highest Single Agent)** used for the synergy classification as well as to the data processing methodology for identification and extraction of the synergies from the dataset.
 
-Currently, this analysis is mostly based on the use of the [rbbt](http://mikisvaz.github.io/rbbt/) tool with its specified workflows and tasks for finding the observed synergies of the SINTEF dataset using various parameters as input. Data results from [@Flobak2019] will also be assessed.
+Currently, this analysis is mostly based on the use of the [rbbt](http://mikisvaz.github.io/rbbt/) tool [@Vazquez2010] with its specified workflows and tasks for finding the observed synergies of the SINTEF dataset using various parameters as input.
+We provide a **docker image** with rbbt and its workflows in the Zenodo dataset [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4022801.svg)](https://doi.org/10.5281/zenodo.4022801) as well as [documentation guidelines](http://tiny.cc/rbbt-doc) on how to use it.
+
+Also, in the [last section](#bliss-all-combinations-method) we are going to validate the method used in [@Flobak2019] to derive statistically significant synergies and compare it with the results from the rbbt-based analysis.
 
 # Summary {-}
 
@@ -85,7 +88,7 @@ The last two tasks take a lot of time to calculate - around $1$ hour *per cell l
 So the data from these two tasks needs to be pre-calculated before we proceed further with the analysis. 
 We provide either **the data pre-calculated** (and a way to extract it for use in the analysis) or **a way to calculate it yourself (DIY)**:
 
-1. [Download](https://doi.org/10.5281/zenodo.3666230) the two datasets from zenodo
+1. Download the two datasets from the zenodo dataset [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4022801.svg)](https://doi.org/10.5281/zenodo.4022801)
 
   Move the two archived files to `~/.rbbt/var/jobs/SINTEF` (where the job files are stored) and run:
 ```
@@ -96,7 +99,7 @@ tar xzvf sintef.combination.index.hsa.tar.gz
 
 2. Compute the `bliss` and `hsa` task results from the SINTEF dataset (DIY way)
 
-  Given an `rbbt.SINTEF.image` (ask the author for it), and a `SINTEF` workflow at least at commit `947307b`, you can use the [run_cimbinator.sh](https://raw.githubusercontent.com/druglogics/sintef-obs-synergies/master/run_cimbinator.sh) script to produce the data results.
+  Given an `rbbt.SINTEF.image` (it's included in the Zenodo dataset), and a `SINTEF` workflow at least at commit `947307b`, you can use the [run_cimbinator.sh](https://raw.githubusercontent.com/druglogics/sintef-obs-synergies/master/run_cimbinator.sh) script to produce the data results.
 
 ## Synergy Methods {-}
 
